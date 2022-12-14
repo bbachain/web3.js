@@ -104,7 +104,7 @@ This library requires a JavaScript runtime that supports [`BigInt`](https://deve
 
 ## Releases
 
-Releases are available on [Github](https://github.com/solana-labs/solana-web3.js/releases)
+Releases are available on [Github](https://github.com/bbachain/web3.js/releases)
 and [npmjs.com](https://www.npmjs.com/package/@solana/web3.js)
 
 Each Github release features a tarball containing API documentation and a
@@ -113,7 +113,7 @@ minified version of the module suitable for direct use in a browser environment
 
 ## Contributing
 
-If you have an issue to report or would like to contribute a pull request, please do so against the monorepo at https://github.com/solana-labs/solana. We are not able to merge pull requests into the mirror repo https://github.com/solana-labs/solana-web3.js and issues filed there may go unnoticed.
+If you have an issue to report or would like to contribute a pull request, please do so against the monorepo at https://github.com/solana-labs/solana. We are not able to merge pull requests into the mirror repo https://github.com/bbachain/web3.js and issues filed there may go unnoticed.
 
 ## Disclaimer
 
