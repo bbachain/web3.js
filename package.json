@@ -1,6 +1,6 @@
 {
   "name": "@bbachain/web3.js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "BBAChain Javascript API",
   "keywords": [
     "api",
