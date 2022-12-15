@@ -3453,7 +3453,7 @@ describe('Connection', function () {
         if (process.env.TEST_LIVE) {
           console.warn(
             'WARNING: We ran no assertions about the genesis block because block 0 ' +
-              'could not be found. See https://github.com/solana-labs/solana/issues/23853.',
+              'could not be found. See https://github.com/bbachain/bbachain/issues/23853.',
           );
           this.skip();
         } else {
@@ -3801,7 +3801,7 @@ describe('Connection', function () {
         if (process.env.TEST_LIVE) {
           console.warn(
             'WARNING: We ran no assertions about the genesis block because block 0 ' +
-              'could not be found. See https://github.com/solana-labs/solana/issues/23853.',
+              'could not be found. See https://github.com/bbachain/bbachain/issues/23853.',
           );
           this.skip();
         } else {
@@ -4045,7 +4045,7 @@ describe('Connection', function () {
         if (process.env.TEST_LIVE) {
           console.warn(
             'WARNING: We ran no assertions about the genesis block because block 0 ' +
-              'could not be found. See https://github.com/solana-labs/solana/issues/23853.',
+              'could not be found. See https://github.com/bbachain/bbachain/issues/23853.',
           );
           this.skip();
         } else {
