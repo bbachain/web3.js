@@ -112,7 +112,8 @@ minified version of the module suitable for direct use in a browser environment
 
 ## Contributing
 
-If you have an issue to report or would like to contribute a pull request, please do so against the monorepo at https://github.com/BTI-Labs/bbachain. We are not able to merge pull requests into the mirror repo https://github.com/BTI-Labs/web3.js and issues filed there may go unnoticed.
+If you found a bug or would like to request a feature, please [file an issue](https://github.com/BTI-Labs/web3.js/issues/new).
+If, based on the discussion on an issue you would like to offer a code change, please make a [pull request](https://github.com/BTI-Labs/web3.js/compare). If neither of these describes what you would like to contribute, read the [getting help](#getting-help) section above.
 
 ## Disclaimer
 
