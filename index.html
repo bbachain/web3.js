@@ -12,25 +12,24 @@
 <div class="col-8 col-content">
 <div class="tsd-page-title">
 <h2>@bbachain/web3.js</h2></div>
-<div class="tsd-panel tsd-typography"><p><a href="https://codecov.io/gh/solana-labs/solana-web3.js"><img src="https://codecov.io/gh/solana-labs/solana-web3.js/branch/master/graph/badge.svg" alt="codecov"></a>
+<div class="tsd-panel tsd-typography"><p><a href="https://codecov.io/gh/BTI-Labs/web3.js"><img src="https://codecov.io/gh/BTI-Labs/web3.js/branch/master/graph/badge.svg" alt="codecov"></a>
 <br>
-<a href="https://www.npmjs.com/package/@solana/web3.js"><img src="https://img.shields.io/npm/v/@solana/web3.js.svg?style=flat" alt="npm"></a>
-<a href="https://www.npmjs.com/package/@solana/web3.js"><img src="https://img.shields.io/npm/dm/@solana/web3.js.svg?style=flat" alt="npm-downloads"></a>
+<a href="https://www.npmjs.com/package/@bbachain/web3.js"><img src="https://img.shields.io/npm/v/@bbachain/web3.js.svg?style=flat" alt="npm"></a>
+<a href="https://www.npmjs.com/package/@bbachain/web3.js"><img src="https://img.shields.io/npm/dm/@bbachain/web3.js.svg?style=flat" alt="npm-downloads"></a>
 <br>
 <a href="https://github.com/semantic-release/semantic-release"><img src="https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg" alt="semantic-release"></a>
 <a href="https://github.com/prettier/prettier"><img src="https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square" alt="code-style-prettier"></a></p>
 
-<a href="#solana-javascript-api" id="solana-javascript-api" style="color: inherit; text-decoration: none;">
-  <h1>Solana JavaScript API</h1>
+<a href="#bbachain-javascript-api" id="bbachain-javascript-api" style="color: inherit; text-decoration: none;">
+  <h1>BBAChain JavaScript API</h1>
 </a>
-<p>This is the Solana Javascript API built on the Solana <a href="https://docs.solana.com/apps/jsonrpc-api">JSON RPC API</a></p>
+<p>This is the BBAChain Javascript API built on the BBAChain <a href="https://docs.solana.com/apps/jsonrpc-api">JSON RPC API</a></p>
 
 <a href="#documentation-and-examples" id="documentation-and-examples" style="color: inherit; text-decoration: none;">
   <h2>Documentation and examples</h2>
 </a>
 <ul>
-<li><a href="https://solanacookbook.com/">The Solana Cookbook</a> has extensive task-based documentation using this library.</li>
-<li>For more detail on individual functions, see the <a href="https://solana-labs.github.io/solana-web3.js/">latest API Documentation</a></li>
+<li>For more detail on individual functions, see the <a href="https://bti-labs.github.io/web3.js/">latest API Documentation</a></li>
 </ul>
 
 <a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
@@ -40,19 +39,19 @@
 <a href="#yarn" id="yarn" style="color: inherit; text-decoration: none;">
   <h3>Yarn</h3>
 </a>
-<pre><code><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-0">add</span><span class="hl-1"> @</span><span class="hl-0">solana</span><span class="hl-1">/</span><span class="hl-0">web3</span><span class="hl-1">.</span><span class="hl-0">js</span>
+<pre><code><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-0">add</span><span class="hl-1"> @</span><span class="hl-0">bbachain</span><span class="hl-1">/</span><span class="hl-0">web3</span><span class="hl-1">.</span><span class="hl-0">js</span>
 </code></pre>
 
 <a href="#npm" id="npm" style="color: inherit; text-decoration: none;">
   <h3>npm</h3>
 </a>
-<pre><code><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">install</span><span class="hl-1"> --</span><span class="hl-0">save</span><span class="hl-1"> @</span><span class="hl-0">solana</span><span class="hl-1">/</span><span class="hl-0">web3</span><span class="hl-1">.</span><span class="hl-0">js</span>
+<pre><code><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">install</span><span class="hl-1"> --</span><span class="hl-0">save</span><span class="hl-1"> @</span><span class="hl-0">bbachain</span><span class="hl-1">/</span><span class="hl-0">web3</span><span class="hl-1">.</span><span class="hl-0">js</span>
 </code></pre>
 
 <a href="#browser-bundle" id="browser-bundle" style="color: inherit; text-decoration: none;">
   <h3>Browser bundle</h3>
 </a>
-<pre><code class="language-html"><span class="hl-2">&lt;!-- Development (un-minified) --&gt;</span><br/><span class="hl-3">&lt;</span><span class="hl-4">script</span><span class="hl-5"> </span><span class="hl-6">src</span><span class="hl-5">=</span><span class="hl-7">&quot;https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js&quot;</span><span class="hl-3">&gt;&lt;/</span><span class="hl-4">script</span><span class="hl-3">&gt;</span><br/><br/><span class="hl-2">&lt;!-- Production (minified) --&gt;</span><br/><span class="hl-3">&lt;</span><span class="hl-4">script</span><span class="hl-5"> </span><span class="hl-6">src</span><span class="hl-5">=</span><span class="hl-7">&quot;https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js&quot;</span><span class="hl-3">&gt;&lt;/</span><span class="hl-4">script</span><span class="hl-3">&gt;</span>
+<pre><code class="language-html"><span class="hl-2">&lt;!-- Development (un-minified) --&gt;</span><br/><span class="hl-3">&lt;</span><span class="hl-4">script</span><span class="hl-5"> </span><span class="hl-6">src</span><span class="hl-5">=</span><span class="hl-7">&quot;https://unpkg.com/@bbachain/web3.js@latest/lib/index.iife.js&quot;</span><span class="hl-3">&gt;&lt;/</span><span class="hl-4">script</span><span class="hl-3">&gt;</span><br/><br/><span class="hl-2">&lt;!-- Production (minified) --&gt;</span><br/><span class="hl-3">&lt;</span><span class="hl-4">script</span><span class="hl-5"> </span><span class="hl-6">src</span><span class="hl-5">=</span><span class="hl-7">&quot;https://unpkg.com/@bbachain/web3.js@latest/lib/index.iife.min.js&quot;</span><span class="hl-3">&gt;&lt;/</span><span class="hl-4">script</span><span class="hl-3">&gt;</span>
 </code></pre>
 
 <a href="#development-environment-setup" id="development-environment-setup" style="color: inherit; text-decoration: none;">
@@ -77,13 +76,13 @@
 <a href="#javascript" id="javascript" style="color: inherit; text-decoration: none;">
   <h3>Javascript</h3>
 </a>
-<pre><code class="language-js"><span class="hl-8">const</span><span class="hl-1"> </span><span class="hl-9">solanaWeb3</span><span class="hl-1"> = </span><span class="hl-10">require</span><span class="hl-1">(</span><span class="hl-11">&#39;@solana/web3.js&#39;</span><span class="hl-1">);</span><br/><span class="hl-0">console</span><span class="hl-1">.</span><span class="hl-10">log</span><span class="hl-1">(</span><span class="hl-0">solanaWeb3</span><span class="hl-1">);</span>
+<pre><code class="language-js"><span class="hl-8">const</span><span class="hl-1"> </span><span class="hl-9">solanaWeb3</span><span class="hl-1"> = </span><span class="hl-10">require</span><span class="hl-1">(</span><span class="hl-11">&#39;@bbachain/web3.js&#39;</span><span class="hl-1">);</span><br/><span class="hl-0">console</span><span class="hl-1">.</span><span class="hl-10">log</span><span class="hl-1">(</span><span class="hl-0">solanaWeb3</span><span class="hl-1">);</span>
 </code></pre>
 
 <a href="#es6" id="es6" style="color: inherit; text-decoration: none;">
   <h3>ES6</h3>
 </a>
-<pre><code class="language-js"><span class="hl-12">import</span><span class="hl-1"> </span><span class="hl-8">*</span><span class="hl-1"> </span><span class="hl-12">as</span><span class="hl-1"> </span><span class="hl-0">solanaWeb3</span><span class="hl-1"> </span><span class="hl-12">from</span><span class="hl-1"> </span><span class="hl-11">&#39;@solana/web3.js&#39;</span><span class="hl-1">;</span><br/><span class="hl-0">console</span><span class="hl-1">.</span><span class="hl-10">log</span><span class="hl-1">(</span><span class="hl-0">solanaWeb3</span><span class="hl-1">);</span>
+<pre><code class="language-js"><span class="hl-12">import</span><span class="hl-1"> </span><span class="hl-8">*</span><span class="hl-1"> </span><span class="hl-12">as</span><span class="hl-1"> </span><span class="hl-0">solanaWeb3</span><span class="hl-1"> </span><span class="hl-12">from</span><span class="hl-1"> </span><span class="hl-11">&#39;@bbachain/web3.js&#39;</span><span class="hl-1">;</span><br/><span class="hl-0">console</span><span class="hl-1">.</span><span class="hl-10">log</span><span class="hl-1">(</span><span class="hl-0">solanaWeb3</span><span class="hl-1">);</span>
 </code></pre>
 
 <a href="#browser-bundle-1" id="browser-bundle-1" style="color: inherit; text-decoration: none;">
@@ -121,8 +120,8 @@
 <a href="#releases" id="releases" style="color: inherit; text-decoration: none;">
   <h2>Releases</h2>
 </a>
-<p>Releases are available on <a href="https://github.com/solana-labs/solana-web3.js/releases">Github</a>
-and <a href="https://www.npmjs.com/package/@solana/web3.js">npmjs.com</a></p>
+<p>Releases are available on <a href="https://github.com/BTI-Labs/web3.js/releases">Github</a>
+and <a href="https://www.npmjs.com/package/@bbachain/web3.js">npmjs.com</a></p>
 <p>Each Github release features a tarball containing API documentation and a
 minified version of the module suitable for direct use in a browser environment
 (<code>&lt;script&gt;</code> tag)</p>
@@ -130,7 +129,7 @@ minified version of the module suitable for direct use in a browser environment
 <a href="#contributing" id="contributing" style="color: inherit; text-decoration: none;">
   <h2>Contributing</h2>
 </a>
-<p>If you have an issue to report or would like to contribute a pull request, please do so against the monorepo at <a href="https://github.com/solana-labs/solana">https://github.com/solana-labs/solana</a>. We are not able to merge pull requests into the mirror repo <a href="https://github.com/solana-labs/solana-web3.js">https://github.com/solana-labs/solana-web3.js</a> and issues filed there may go unnoticed.</p>
+<p>If you have an issue to report or would like to contribute a pull request, please do so against the monorepo at <a href="https://github.com/BTI-Labs/bbachain">https://github.com/BTI-Labs/bbachain</a>. We are not able to merge pull requests into the mirror repo <a href="https://github.com/BTI-Labs/web3.js">https://github.com/BTI-Labs/web3.js</a> and issues filed there may go unnoticed.</p>
 
 <a href="#disclaimer" id="disclaimer" style="color: inherit; text-decoration: none;">
   <h2>Disclaimer</h2>
