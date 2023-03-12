@@ -23,7 +23,7 @@
 <a href="#bbachain-javascript-api" id="bbachain-javascript-api" style="color: inherit; text-decoration: none;">
   <h1>BBAChain JavaScript API</h1>
 </a>
-<p>This is the BBAChain Javascript API built on the BBAChain <a href="https://docs.solana.com/apps/jsonrpc-api">JSON RPC API</a></p>
+<p>This is the BBAChain Javascript API built on the BBAChain <a href="https://docs.bbachain.com/apps/jsonrpc-api">JSON RPC API</a></p>
 
 <a href="#documentation-and-examples" id="documentation-and-examples" style="color: inherit; text-decoration: none;">
   <h2>Documentation and examples</h2>
@@ -57,17 +57,17 @@
 <a href="#development-environment-setup" id="development-environment-setup" style="color: inherit; text-decoration: none;">
   <h2>Development Environment Setup</h2>
 </a>
-<p>Install the latest Solana release from <a href="https://docs.solana.com/cli/install-solana-cli-tools">https://docs.solana.com/cli/install-solana-cli-tools</a></p>
+<p>Install the latest BBAChain release from <a href="https://docs.bbachain.com/cli/install-cli-tools">https://docs.bbachain.com/cli/install-cli-tools</a></p>
 
 <a href="#run-test-validator" id="run-test-validator" style="color: inherit; text-decoration: none;">
   <h3>Run test validator</h3>
 </a>
-<p><strong>Use <code>solana-test-validator</code> from the latest Solana release</strong></p>
+<p><strong>Use <code>solana-test-validator</code> from the latest BBAChain release</strong></p>
 
 <a href="#sbf-program-development" id="sbf-program-development" style="color: inherit; text-decoration: none;">
   <h3>SBF program development</h3>
 </a>
-<p><strong>Use <code>cargo build-bpf</code> from the latest Solana release</strong></p>
+<p><strong>Use <code>cargo build-bpf</code> from the latest BBAChain release</strong></p>
 
 <a href="#usage" id="usage" style="color: inherit; text-decoration: none;">
   <h2>Usage</h2>
@@ -76,19 +76,19 @@
 <a href="#javascript" id="javascript" style="color: inherit; text-decoration: none;">
   <h3>Javascript</h3>
 </a>
-<pre><code class="language-js"><span class="hl-8">const</span><span class="hl-1"> </span><span class="hl-9">solanaWeb3</span><span class="hl-1"> = </span><span class="hl-10">require</span><span class="hl-1">(</span><span class="hl-11">&#39;@bbachain/web3.js&#39;</span><span class="hl-1">);</span><br/><span class="hl-0">console</span><span class="hl-1">.</span><span class="hl-10">log</span><span class="hl-1">(</span><span class="hl-0">solanaWeb3</span><span class="hl-1">);</span>
+<pre><code class="language-js"><span class="hl-8">const</span><span class="hl-1"> </span><span class="hl-9">web3</span><span class="hl-1"> = </span><span class="hl-10">require</span><span class="hl-1">(</span><span class="hl-11">&#39;@bbachain/web3.js&#39;</span><span class="hl-1">);</span><br/><span class="hl-0">console</span><span class="hl-1">.</span><span class="hl-10">log</span><span class="hl-1">(</span><span class="hl-0">web3</span><span class="hl-1">);</span>
 </code></pre>
 
 <a href="#es6" id="es6" style="color: inherit; text-decoration: none;">
   <h3>ES6</h3>
 </a>
-<pre><code class="language-js"><span class="hl-12">import</span><span class="hl-1"> </span><span class="hl-8">*</span><span class="hl-1"> </span><span class="hl-12">as</span><span class="hl-1"> </span><span class="hl-0">solanaWeb3</span><span class="hl-1"> </span><span class="hl-12">from</span><span class="hl-1"> </span><span class="hl-11">&#39;@bbachain/web3.js&#39;</span><span class="hl-1">;</span><br/><span class="hl-0">console</span><span class="hl-1">.</span><span class="hl-10">log</span><span class="hl-1">(</span><span class="hl-0">solanaWeb3</span><span class="hl-1">);</span>
+<pre><code class="language-js"><span class="hl-12">import</span><span class="hl-1"> </span><span class="hl-8">*</span><span class="hl-1"> </span><span class="hl-12">as</span><span class="hl-1"> </span><span class="hl-0">web3</span><span class="hl-1"> </span><span class="hl-12">from</span><span class="hl-1"> </span><span class="hl-11">&#39;@bbachain/web3.js&#39;</span><span class="hl-1">;</span><br/><span class="hl-0">console</span><span class="hl-1">.</span><span class="hl-10">log</span><span class="hl-1">(</span><span class="hl-0">web3</span><span class="hl-1">);</span>
 </code></pre>
 
 <a href="#browser-bundle-1" id="browser-bundle-1" style="color: inherit; text-decoration: none;">
   <h3>Browser bundle</h3>
 </a>
-<pre><code class="language-js"><span class="hl-2">// `solanaWeb3` is provided in the global namespace by the `solanaWeb3.min.js` script bundle.</span><br/><span class="hl-0">console</span><span class="hl-1">.</span><span class="hl-10">log</span><span class="hl-1">(</span><span class="hl-0">solanaWeb3</span><span class="hl-1">);</span>
+<pre><code class="language-js"><span class="hl-2">// `web3` is provided in the global namespace by the `web3.min.js` script bundle.</span><br/><span class="hl-0">console</span><span class="hl-1">.</span><span class="hl-10">log</span><span class="hl-1">(</span><span class="hl-0">web3</span><span class="hl-1">);</span>
 </code></pre>
 
 <a href="#compatibility" id="compatibility" style="color: inherit; text-decoration: none;">
@@ -136,22 +136,22 @@ minified version of the module suitable for direct use in a browser environment
 </a>
 <p>All claims, content, designs, algorithms, estimates, roadmaps,
 specifications, and performance measurements described in this project
-are done with the Solana Foundation&#39;s (&quot;SF&quot;) best efforts. It is up to
+are done with the BBAChain Labs best efforts. It is up to
 the reader to check and validate their accuracy and truthfulness.
 Furthermore nothing in this project constitutes a solicitation for
 investment.</p>
-<p>Any content produced by SF or developer resources that SF provides, are
-for educational and inspiration purposes only. SF does not encourage,
-induce or sanction the deployment, integration or use of any such
-applications (including the code comprising the Solana blockchain
-protocol) in violation of applicable laws or regulations and hereby
-prohibits any such deployment, integration or use. This includes use of
-any such applications by the reader (a) in violation of export control
-or sanctions laws of the United States or any other applicable
-jurisdiction, (b) if the reader is located in or ordinarily resident in
-a country or territory subject to comprehensive sanctions administered
-by the U.S. Office of Foreign Assets Control (OFAC), or (c) if the
-reader is or is working on behalf of a Specially Designated National
+<p>Any content produced by BBAChain Labs or developer resources that
+BBAChain Labs provides, are for educational and inspiration purposes
+only. BBAChain Labs does not encourage, induce or sanction the deployment,
+integration or use of any such applications (including the code comprising
+the BBAChain blockchain protocol) in violation of applicable laws or
+regulations and hereby prohibits any such deployment, integration or use.
+This includes use of any such applications by the reader (a) in violation
+of export control or sanctions laws of the United States or any other
+applicable jurisdiction, (b) if the reader is located in or ordinarily
+resident in a country or territory subject to comprehensive sanctions
+administered by the U.S. Office of Foreign Assets Control (OFAC), or (c)
+if the reader is or is working on behalf of a Specially Designated National
 (SDN) or a person subject to similar blocking or denied party
 prohibitions.</p>
 <p>The reader should be aware that U.S. export control and sanctions laws
@@ -159,15 +159,15 @@ prohibit U.S. persons (and other persons that are subject to such laws)
 from transacting with persons in certain countries and territories or
 that are on the SDN list. As a project based primarily on open-source
 software, it is possible that such sanctioned persons may nevertheless
-bypass prohibitions, obtain the code comprising the Solana blockchain
+bypass prohibitions, obtain the code comprising the BBAChain blockchain
 protocol (or other project code or applications) and deploy, integrate,
 or otherwise use it. Accordingly, there is a risk to individuals that
-other persons using the Solana blockchain protocol may be sanctioned
+other persons using the BBAChain blockchain protocol may be sanctioned
 persons and that transactions with such persons would be a violation of
 U.S. export controls and sanctions law. This risk applies to
 individuals, organizations, and other ecosystem participants that
-deploy, integrate, or use the Solana blockchain protocol code directly
-(e.g., as a node operator), and individuals that transact on the Solana
+deploy, integrate, or use the BBAChain blockchain protocol code directly
+(e.g., as a node operator), and individuals that transact on the BBAChain
 blockchain through light clients, third party interfaces, and/or wallet
 software.</p>
 </div></div>
