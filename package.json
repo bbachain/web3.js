@@ -1,14 +1,15 @@
 {
   "name": "@bbachain/web3.js",
   "version": "0.0.0-development",
-  "description": "Solana Javascript API",
+  "description": "BBAChain Javascript API",
   "keywords": [
     "api",
+    "bbachain",
     "blockchain"
   ],
   "license": "MIT",
-  "author": "Solana Labs Maintainers <maintainers@solanalabs.com>",
-  "homepage": "https://solana.com/",
+  "author": "Maintainers <maintainers@bbachain.com>",
+  "homepage": "https://bbachain.com/",
   "repository": {
     "type": "git",
     "url": "https://github.com/BTI-Labs/web3.js.git"

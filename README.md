@@ -18,7 +18,7 @@
 
 # BBAChain JavaScript API
 
-This is the BBAChain Javascript API built on the BBAChain [JSON RPC API](https://docs.solana.com/apps/jsonrpc-api)
+This is the BBAChain Javascript API built on the BBAChain [JSON RPC API](https://docs.bbachain.com/apps/jsonrpc-api)
 
 ## Documentation and examples
 
@@ -50,37 +50,37 @@ $ npm install --save @bbachain/web3.js
 
 ## Development Environment Setup
 
-Install the latest Solana release from https://docs.solana.com/cli/install-solana-cli-tools
+Install the latest BBAChain release from https://docs.bbachain.com/cli/install-cli-tools
 
 ### Run test validator
 
-**Use `solana-test-validator` from the latest Solana release**
+**Use `solana-test-validator` from the latest BBAChain release**
 
 ### SBF program development
 
-**Use `cargo build-bpf` from the latest Solana release**
+**Use `cargo build-bpf` from the latest BBAChain release**
 
 ## Usage
 
 ### Javascript
 
 ```js
-const solanaWeb3 = require('@bbachain/web3.js');
-console.log(solanaWeb3);
+const web3 = require('@bbachain/web3.js');
+console.log(web3);
 ```
 
 ### ES6
 
 ```js
-import * as solanaWeb3 from '@bbachain/web3.js';
-console.log(solanaWeb3);
+import * as web3 from '@bbachain/web3.js';
+console.log(web3);
 ```
 
 ### Browser bundle
 
 ```js
-// `solanaWeb3` is provided in the global namespace by the `solanaWeb3.min.js` script bundle.
-console.log(solanaWeb3);
+// `web3` is provided in the global namespace by the `web3.min.js` script bundle.
+console.log(web3);
 ```
 
 ## Compatibility
@@ -118,23 +118,23 @@ If you have an issue to report or would like to contribute a pull request, pleas
 
 All claims, content, designs, algorithms, estimates, roadmaps,
 specifications, and performance measurements described in this project
-are done with the Solana Foundation's ("SF") best efforts. It is up to
+are done with the BBAChain Labs best efforts. It is up to
 the reader to check and validate their accuracy and truthfulness.
 Furthermore nothing in this project constitutes a solicitation for
 investment.
 
-Any content produced by SF or developer resources that SF provides, are
-for educational and inspiration purposes only. SF does not encourage,
-induce or sanction the deployment, integration or use of any such
-applications (including the code comprising the Solana blockchain
-protocol) in violation of applicable laws or regulations and hereby
-prohibits any such deployment, integration or use. This includes use of
-any such applications by the reader (a) in violation of export control
-or sanctions laws of the United States or any other applicable
-jurisdiction, (b) if the reader is located in or ordinarily resident in
-a country or territory subject to comprehensive sanctions administered
-by the U.S. Office of Foreign Assets Control (OFAC), or (c) if the
-reader is or is working on behalf of a Specially Designated National
+Any content produced by BBAChain Labs or developer resources that
+BBAChain Labs provides, are for educational and inspiration purposes
+only. BBAChain Labs does not encourage, induce or sanction the deployment,
+integration or use of any such applications (including the code comprising
+the BBAChain blockchain protocol) in violation of applicable laws or
+regulations and hereby prohibits any such deployment, integration or use.
+This includes use of any such applications by the reader (a) in violation
+of export control or sanctions laws of the United States or any other
+applicable jurisdiction, (b) if the reader is located in or ordinarily
+resident in a country or territory subject to comprehensive sanctions
+administered by the U.S. Office of Foreign Assets Control (OFAC), or (c)
+if the reader is or is working on behalf of a Specially Designated National
 (SDN) or a person subject to similar blocking or denied party
 prohibitions.
 
@@ -143,14 +143,14 @@ prohibit U.S. persons (and other persons that are subject to such laws)
 from transacting with persons in certain countries and territories or
 that are on the SDN list. As a project based primarily on open-source
 software, it is possible that such sanctioned persons may nevertheless
-bypass prohibitions, obtain the code comprising the Solana blockchain
+bypass prohibitions, obtain the code comprising the BBAChain blockchain
 protocol (or other project code or applications) and deploy, integrate,
 or otherwise use it. Accordingly, there is a risk to individuals that
-other persons using the Solana blockchain protocol may be sanctioned
+other persons using the BBAChain blockchain protocol may be sanctioned
 persons and that transactions with such persons would be a violation of
 U.S. export controls and sanctions law. This risk applies to
 individuals, organizations, and other ecosystem participants that
-deploy, integrate, or use the Solana blockchain protocol code directly
-(e.g., as a node operator), and individuals that transact on the Solana
+deploy, integrate, or use the BBAChain blockchain protocol code directly
+(e.g., as a node operator), and individuals that transact on the BBAChain
 blockchain through light clients, third party interfaces, and/or wallet
 software.
