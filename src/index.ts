@@ -21,4 +21,4 @@ export * from './utils';
 /**
  * There are 1-billion lamports in one BBA
  */
-export const LAMPORTS_PER_SOL = 1000000000;
+export const DALTON_PER_BBA = 1000000000;

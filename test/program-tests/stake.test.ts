@@ -8,7 +8,7 @@ import {
   Lockup,
   PublicKey,
   sendAndConfirmTransaction,
-  LAMPORTS_PER_SOL,
+  DALTON_PER_BBA,
   StakeAuthorizationLayout,
   StakeInstruction,
   StakeProgram,
@@ -402,14 +402,14 @@ describe('StakeProgram', () => {
       await helpers.airdrop({
         connection,
         address: payer.publicKey,
-        amount: 10 * LAMPORTS_PER_SOL,
+        amount: 10 * DALTON_PER_BBA,
       });
 
       const authorized = Keypair.generate();
       await helpers.airdrop({
         connection,
         address: authorized.publicKey,
-        amount: 2 * LAMPORTS_PER_SOL,
+        amount: 2 * DALTON_PER_BBA,
       });
 
       const recipient = Keypair.generate();
@@ -461,7 +461,7 @@ describe('StakeProgram', () => {
       );
 
       const WITHDRAW_AMOUNT = 1;
-      const INITIAL_STAKE_DELEGATION = 5 * LAMPORTS_PER_SOL;
+      const INITIAL_STAKE_DELEGATION = 5 * DALTON_PER_BBA;
       let createAndInitializeWithSeed = StakeProgram.createAccountWithSeed({
         fromPubkey: payer.publicKey,
         stakePubkey: newAccountPubkey,
@@ -618,10 +618,7 @@ describe('StakeProgram', () => {
 
       // Authorize to new account
       const newAuthorized = Keypair.generate();
-      await connection.requestAirdrop(
-        newAuthorized.publicKey,
-        LAMPORTS_PER_SOL,
-      );
+      await connection.requestAirdrop(newAuthorized.publicKey, DALTON_PER_BBA);
 
       let authorize = StakeProgram.authorize({
         stakePubkey: newAccountPubkey,

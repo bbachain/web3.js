@@ -4,7 +4,7 @@ import chaiAsPromised from 'chai-as-promised';
 import {
   Keypair,
   Connection,
-  LAMPORTS_PER_SOL,
+  DALTON_PER_BBA,
   Transaction,
   ComputeBudgetProgram,
   ComputeBudgetInstruction,
@@ -19,7 +19,7 @@ describe('ComputeBudgetProgram', () => {
   it('requestUnits', () => {
     const params = {
       units: 150000,
-      additionalFee: LAMPORTS_PER_SOL,
+      additionalFee: DALTON_PER_BBA,
     };
     const ix = ComputeBudgetProgram.requestUnits(params);
     const decodedParams = ComputeBudgetInstruction.decodeRequestUnits(ix);
@@ -74,7 +74,7 @@ describe('ComputeBudgetProgram', () => {
   if (process.env.TEST_LIVE) {
     it('send live request heap ix', async () => {
       const connection = new Connection(url, 'confirmed');
-      const STARTING_AMOUNT = 2 * LAMPORTS_PER_SOL;
+      const STARTING_AMOUNT = 2 * DALTON_PER_BBA;
       const baseAccount = Keypair.generate();
       const basePubkey = baseAccount.publicKey;
       await helpers.airdrop({
@@ -117,8 +117,8 @@ describe('ComputeBudgetProgram', () => {
 
     it('send live compute unit ixs', async () => {
       const connection = new Connection(url, 'confirmed');
-      const FEE_AMOUNT = LAMPORTS_PER_SOL;
-      const STARTING_AMOUNT = 2 * LAMPORTS_PER_SOL;
+      const FEE_AMOUNT = DALTON_PER_BBA;
+      const STARTING_AMOUNT = 2 * DALTON_PER_BBA;
       const baseAccount = Keypair.generate();
       const basePubkey = baseAccount.publicKey;
       await helpers.airdrop({
