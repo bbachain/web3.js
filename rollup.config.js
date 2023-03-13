@@ -100,7 +100,7 @@ function generateConfig(configType, format) {
       '@noble/hashes/sha512',
       '@noble/ed25519',
       '@noble/secp256k1',
-      '@solana/buffer-layout',
+      '@bbachain/buffer-layout',
       'bigint-buffer',
       'bn.js',
       'borsh',
@@ -164,7 +164,7 @@ function generateConfig(configType, format) {
           // Prevent dependencies from being bundled
           config.external = [
             /@babel\/runtime/,
-            '@solana/buffer-layout',
+            '@bbachain/buffer-layout',
             '@noble/hashes/hmac',
             '@noble/hashes/sha256',
             '@noble/hashes/sha3',

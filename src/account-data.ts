@@ -1,4 +1,4 @@
-import * as BufferLayout from '@solana/buffer-layout';
+import * as BufferLayout from '@bbachain/buffer-layout';
 
 export interface IAccountStateData {
   readonly typeIndex: number;
@@ -8,7 +8,7 @@ export interface IAccountStateData {
  * @internal
  */
 export type AccountType<TInputData extends IAccountStateData> = {
-  /** The account type index (from solana upstream program) */
+  /** The account type index (from bbachain upstream program) */
   index: number;
   /** The BufferLayout to use to build data */
   layout: BufferLayout.Layout<TInputData>;
