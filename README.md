@@ -65,22 +65,22 @@ Install the latest BBAChain release from https://docs.bbachain.com/cli/install-c
 ### Javascript
 
 ```js
-const web3 = require('@bbachain/web3.js');
-console.log(web3);
+const bbaWeb3 = require('@bbachain/web3.js');
+console.log(bbaWeb3);
 ```
 
 ### ES6
 
 ```js
-import * as web3 from '@bbachain/web3.js';
-console.log(web3);
+import * as bbaWeb3 from '@bbachain/web3.js';
+console.log(bbaWeb3);
 ```
 
 ### Browser bundle
 
 ```js
-// `web3` is provided in the global namespace by the `web3.min.js` script bundle.
-console.log(web3);
+// `bbaWeb3` is provided in the global namespace by the `bbaWeb3.min.js` script bundle.
+console.log(bbaWeb3);
 ```
 
 ## Compatibility
