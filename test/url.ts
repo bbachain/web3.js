@@ -25,5 +25,5 @@ export const Node14Controller = function () {
   return new AbortControllerPolyfill();
 };
 
-//export const url = 'https://api-devnet.bbachain.com/';
-//export const url = 'http://api-devnet.bbachain.com/';
+//export const url = 'https://api-testnet.bbachain.com/';
+//export const url = 'http://api-testnet.bbachain.com/';
