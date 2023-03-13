@@ -188,7 +188,7 @@ export class Loader {
       );
 
       // Delay between sends in an attempt to reduce rate limit errors
-      if (connection._rpcEndpoint.includes('solana.com')) {
+      if (connection._rpcEndpoint.includes('bbachain.com')) {
         const REQUESTS_PER_SECOND = 4;
         await sleep(1000 / REQUESTS_PER_SECOND);
       }

@@ -5625,7 +5625,7 @@ describe('Connection', function () {
     });
 
     it('https request', async () => {
-      const connection = new Connection('https://api.mainnet-beta.solana.com');
+      const connection = new Connection('https://api-mainnet.bbachain.com');
       const version = await connection.getVersion();
       expect(version['solana-core']).to.be.ok;
     }).timeout(20 * 1000);

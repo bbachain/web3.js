@@ -737,7 +737,7 @@ export type VoteAccountStatus = {
 
 /**
  * Network Inflation
- * (see https://docs.solana.com/implemented-proposals/ed_overview)
+ * (see https://docs.bbachain.com/implemented-proposals/ed_overview)
  */
 export type InflationGovernor = {
   foundation: number;
@@ -840,7 +840,7 @@ const GetEpochScheduleResult = pick({
 
 /**
  * Leader schedule
- * (see https://docs.solana.com/terminology#leader-schedule)
+ * (see https://docs.bbachain.com/terminology#leader-schedule)
  */
 export type LeaderSchedule = {
   [address: string]: number[];
@@ -5401,7 +5401,7 @@ export class Connection {
    * import { Connection, PublicKey, LAMPORTS_PER_SOL } from "@bbachain/web3.js";
    *
    * (async () => {
-   *   const connection = new Connection("https://api.testnet.solana.com", "confirmed");
+   *   const connection = new Connection("https://api-testnet.bbachain.com", "confirmed");
    *   const myAddress = new PublicKey("2nr1bHFT86W9tGnyvmYW4vcHKsQB3sVQfnddasz4kExM");
    *   const signature = await connection.requestAirdrop(myAddress, LAMPORTS_PER_SOL);
    *   await connection.confirmTransaction(signature);
