@@ -9,14 +9,14 @@ describe('Cluster Util', () => {
     }).to.throw();
   });
 
-  it('devnet', () => {
-    expect(clusterApiUrl()).to.eq('https://api-devnet.bbachain.com');
-    expect(clusterApiUrl('devnet')).to.eq('https://api-devnet.bbachain.com');
-    expect(clusterApiUrl('devnet', true)).to.eq(
-      'https://api-devnet.bbachain.com',
+  it('testnet', () => {
+    expect(clusterApiUrl()).to.eq('https://api-testnet.bbachain.com');
+    expect(clusterApiUrl('testnet')).to.eq('https://api-testnet.bbachain.com');
+    expect(clusterApiUrl('testnet', true)).to.eq(
+      'https://api-testnet.bbachain.com',
     );
-    expect(clusterApiUrl('devnet', false)).to.eq(
-      'http://api-devnet.bbachain.com',
+    expect(clusterApiUrl('testnet', false)).to.eq(
+      'http://api-testnet.bbachain.com',
     );
   });
 });

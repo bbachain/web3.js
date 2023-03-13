@@ -23,7 +23,10 @@ const TEST_CASES = [
   ['https://[::]/', 'wss://[::]/'],
   ['https://[::1]/', 'wss://[::1]/'],
   // Increment port if supplied
-  ['https://api-testnet.bbachain.com:80/', 'wss://api-testnet.bbachain.com:81/'],
+  [
+    'https://api-testnet.bbachain.com:80/',
+    'wss://api-testnet.bbachain.com:81/',
+  ],
   ['https://192.168.0.1:443/', 'wss://192.168.0.1:444/'],
   ['https://[::]:8080/', 'wss://[::]:8081/'],
   // No trailing slash
