@@ -1,4 +1,4 @@
-import * as BufferLayout from '@solana/buffer-layout';
+import * as BufferLayout from '@bbachain/buffer-layout';
 
 import {Signer} from '../keypair';
 import assert from '../utils/assert';

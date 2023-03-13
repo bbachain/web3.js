@@ -1,6 +1,6 @@
 import bs58 from 'bs58';
 import {Buffer} from 'buffer';
-import * as splToken from '@solana/spl-token';
+import * as splToken from '@bbachain/spl-token';
 import {expect, use} from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import {Agent as HttpAgent} from 'http';

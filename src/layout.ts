@@ -1,5 +1,5 @@
 import {Buffer} from 'buffer';
-import * as BufferLayout from '@solana/buffer-layout';
+import * as BufferLayout from '@bbachain/buffer-layout';
 
 import {VoteAuthorizeWithSeedArgs} from './programs/vote';
 
