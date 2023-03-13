@@ -19,6 +19,6 @@ export * from './sysvar';
 export * from './utils';
 
 /**
- * There are 1-billion lamports in one SOL
+ * There are 1-billion lamports in one BBA
  */
 export const LAMPORTS_PER_SOL = 1000000000;
