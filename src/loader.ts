@@ -102,13 +102,13 @@ export class Loader {
           );
         }
 
-        if (programInfo.lamports < balanceNeeded) {
+        if (programInfo.daltons < balanceNeeded) {
           transaction = transaction || new Transaction();
           transaction.add(
             SystemProgram.transfer({
               fromPubkey: payer.publicKey,
               toPubkey: program.publicKey,
-              lamports: balanceNeeded - programInfo.lamports,
+              daltons: balanceNeeded - programInfo.daltons,
             }),
           );
         }
@@ -117,7 +117,7 @@ export class Loader {
           SystemProgram.createAccount({
             fromPubkey: payer.publicKey,
             newAccountPubkey: program.publicKey,
-            lamports: balanceNeeded > 0 ? balanceNeeded : 1,
+            daltons: balanceNeeded > 0 ? balanceNeeded : 1,
             space: data.length,
             programId,
           }),

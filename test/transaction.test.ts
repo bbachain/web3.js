@@ -269,7 +269,7 @@ describe('Transaction', () => {
       }).add(
         SystemProgram.transfer({
           fromPubkey: nonceAuthority,
-          lamports: 1,
+          daltons: 1,
           toPubkey: new PublicKey(3),
         }),
       );
@@ -320,7 +320,7 @@ describe('Transaction', () => {
         .add(
           SystemProgram.transfer({
             fromPubkey: nonceAuthority,
-            lamports: 1,
+            daltons: 1,
             toPubkey: new PublicKey(3),
           }),
         );
@@ -369,7 +369,7 @@ describe('Transaction', () => {
         SystemProgram.transfer({
           fromPubkey: accountFrom.publicKey,
           toPubkey: accountTo.publicKey,
-          lamports: 10,
+          daltons: 10,
         }),
       );
 
@@ -385,7 +385,7 @@ describe('Transaction', () => {
     const transfer = SystemProgram.transfer({
       fromPubkey: account1.publicKey,
       toPubkey: account2.publicKey,
-      lamports: 123,
+      daltons: 123,
     });
 
     const transaction = new Transaction({
@@ -506,12 +506,12 @@ describe('Transaction', () => {
     const transfer1 = SystemProgram.transfer({
       fromPubkey: account1.publicKey,
       toPubkey: account2.publicKey,
-      lamports: 123,
+      daltons: 123,
     });
     const transfer2 = SystemProgram.transfer({
       fromPubkey: account2.publicKey,
       toPubkey: account1.publicKey,
-      lamports: 123,
+      daltons: 123,
     });
 
     const latestBlockhash = {
@@ -539,12 +539,12 @@ describe('Transaction', () => {
     const transfer1 = SystemProgram.transfer({
       fromPubkey: account1.publicKey,
       toPubkey: account2.publicKey,
-      lamports: 123,
+      daltons: 123,
     });
     const transfer2 = SystemProgram.transfer({
       fromPubkey: account1.publicKey,
       toPubkey: account2.publicKey,
-      lamports: 123,
+      daltons: 123,
     });
 
     const orgTransaction = new Transaction({
@@ -572,7 +572,7 @@ describe('Transaction', () => {
       SystemProgram.transfer({
         fromPubkey: account1.publicKey,
         toPubkey: account2.publicKey,
-        lamports: 123,
+        daltons: 123,
       }),
     );
     transferTransaction.sign(account1);
@@ -604,7 +604,7 @@ describe('Transaction', () => {
     const transfer = SystemProgram.transfer({
       fromPubkey: sender.publicKey,
       toPubkey: recipient,
-      lamports: 49,
+      daltons: 49,
     });
     const expectedTransaction = new Transaction({
       blockhash: recentBlockhash,
@@ -774,7 +774,7 @@ describe('Transaction', () => {
     const transfer = SystemProgram.transfer({
       fromPubkey: sender.publicKey,
       toPubkey: recipient,
-      lamports: 49,
+      daltons: 49,
     });
     const expectedTransaction = new Transaction({
       blockhash: recentBlockhash,
@@ -858,7 +858,7 @@ describe('Transaction', () => {
     const transfer = SystemProgram.transfer({
       fromPubkey: sender.publicKey,
       toPubkey: recipient,
-      lamports: 49,
+      daltons: 49,
     });
     let expectedTransaction: Transaction;
     beforeEach(() => {

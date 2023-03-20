@@ -10,7 +10,7 @@ import {
   Connection,
   Keypair,
   sendAndConfirmTransaction,
-  DALTON_PER_BBA,
+  BBA_DALTON_UNIT,
   Transaction,
   Secp256k1Program,
 } from '../../src';
@@ -37,7 +37,7 @@ if (process.env.TEST_LIVE) {
 
     before(async function () {
       await connection.confirmTransaction(
-        await connection.requestAirdrop(from.publicKey, 10 * DALTON_PER_BBA),
+        await connection.requestAirdrop(from.publicKey, 10 * BBA_DALTON_UNIT),
       );
     });
 

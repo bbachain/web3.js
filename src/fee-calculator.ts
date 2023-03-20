@@ -5,7 +5,7 @@ import * as BufferLayout from '@bbachain/buffer-layout';
  *
  * @internal
  */
-export const FeeCalculatorLayout = BufferLayout.nu64('lamportsPerSignature');
+export const FeeCalculatorLayout = BufferLayout.nu64('daltonsPerSignature');
 
 /**
  * Calculator for transaction fees.
@@ -13,6 +13,6 @@ export const FeeCalculatorLayout = BufferLayout.nu64('lamportsPerSignature');
  * @deprecated Deprecated since BBAChain v1.8.0.
  */
 export interface FeeCalculator {
-  /** Cost in lamports to validate a signature. */
-  lamportsPerSignature: number;
+  /** Cost in daltons to validate a signature. */
+  daltonsPerSignature: number;
 }

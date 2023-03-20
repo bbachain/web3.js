@@ -11,7 +11,7 @@ import {
   Transaction,
   TransactionInstruction,
   sendAndConfirmTransaction,
-  DALTON_PER_BBA,
+  BBA_DALTON_UNIT,
 } from '../../src';
 import {NONCE_ACCOUNT_LENGTH} from '../../src/nonce-account';
 import {sleep} from '../../src/utils/sleep';
@@ -23,7 +23,7 @@ describe('SystemProgram', () => {
     const params = {
       fromPubkey: Keypair.generate().publicKey,
       newAccountPubkey: Keypair.generate().publicKey,
-      lamports: 123,
+      daltons: 123,
       space: 0,
       programId: SystemProgram.programId,
     };
@@ -41,14 +41,14 @@ describe('SystemProgram', () => {
     const params = {
       fromPubkey: Keypair.generate().publicKey,
       toPubkey: Keypair.generate().publicKey,
-      lamports: 123,
+      daltons: 123,
     };
     const transaction = new Transaction().add(SystemProgram.transfer(params));
     expect(transaction.instructions).to.have.length(1);
     const [systemInstruction] = transaction.instructions;
     const decodedParams = {
       ...params,
-      lamports: BigInt(params.lamports),
+      daltons: BigInt(params.daltons),
     };
     expect(decodedParams).to.eql(
       SystemInstruction.decodeTransfer(systemInstruction),
@@ -60,7 +60,7 @@ describe('SystemProgram', () => {
       fromPubkey: Keypair.generate().publicKey,
       basePubkey: Keypair.generate().publicKey,
       toPubkey: Keypair.generate().publicKey,
-      lamports: 123,
+      daltons: 123,
       seed: '你好',
       programId: Keypair.generate().publicKey,
     };
@@ -69,7 +69,7 @@ describe('SystemProgram', () => {
     const [systemInstruction] = transaction.instructions;
     const decodedParams = {
       ...params,
-      lamports: BigInt(params.lamports),
+      daltons: BigInt(params.daltons),
     };
     expect(decodedParams).to.eql(
       SystemInstruction.decodeTransferWithSeed(systemInstruction),
@@ -136,7 +136,7 @@ describe('SystemProgram', () => {
       newAccountPubkey: Keypair.generate().publicKey,
       basePubkey: fromPubkey,
       seed: 'hi there',
-      lamports: 123,
+      daltons: 123,
       space: 0,
       programId: SystemProgram.programId,
     };
@@ -156,7 +156,7 @@ describe('SystemProgram', () => {
       fromPubkey,
       noncePubkey: Keypair.generate().publicKey,
       authorizedPubkey: fromPubkey,
-      lamports: 123,
+      daltons: 123,
     };
 
     const transaction = new Transaction().add(
@@ -168,7 +168,7 @@ describe('SystemProgram', () => {
     const createParams = {
       fromPubkey: params.fromPubkey,
       newAccountPubkey: params.noncePubkey,
-      lamports: params.lamports,
+      daltons: params.daltons,
       space: NONCE_ACCOUNT_LENGTH,
       programId: SystemProgram.programId,
     };
@@ -193,7 +193,7 @@ describe('SystemProgram', () => {
       authorizedPubkey: fromPubkey,
       basePubkey: fromPubkey,
       seed: 'hi there',
-      lamports: 123,
+      daltons: 123,
     };
 
     const transaction = new Transaction().add(
@@ -207,7 +207,7 @@ describe('SystemProgram', () => {
       newAccountPubkey: params.noncePubkey,
       basePubkey: fromPubkey,
       seed: 'hi there',
-      lamports: params.lamports,
+      daltons: params.daltons,
       space: NONCE_ACCOUNT_LENGTH,
       programId: SystemProgram.programId,
     };
@@ -238,7 +238,7 @@ describe('SystemProgram', () => {
       noncePubkey: Keypair.generate().publicKey,
       authorizedPubkey: Keypair.generate().publicKey,
       toPubkey: Keypair.generate().publicKey,
-      lamports: 123,
+      daltons: 123,
     };
     const transaction = new Transaction().add(
       SystemProgram.nonceWithdraw(params),
@@ -304,7 +304,7 @@ describe('SystemProgram', () => {
       await helpers.airdrop({
         connection,
         address: from.publicKey,
-        amount: 2 * DALTON_PER_BBA,
+        amount: 2 * BBA_DALTON_UNIT,
       });
 
       const to = Keypair.generate();
@@ -312,7 +312,7 @@ describe('SystemProgram', () => {
       await helpers.airdrop({
         connection,
         address: newAuthority.publicKey,
-        amount: DALTON_PER_BBA,
+        amount: BBA_DALTON_UNIT,
       });
 
       const minimumAmount = await connection.getMinimumBalanceForRentExemption(
@@ -324,7 +324,7 @@ describe('SystemProgram', () => {
           fromPubkey: from.publicKey,
           noncePubkey: nonceAccount.publicKey,
           authorizedPubkey: from.publicKey,
-          lamports: minimumAmount,
+          daltons: minimumAmount,
         }),
       );
       await sendAndConfirmTransaction(
@@ -388,7 +388,7 @@ describe('SystemProgram', () => {
         SystemProgram.transfer({
           fromPubkey: from.publicKey,
           toPubkey: to.publicKey,
-          lamports: minimumAmount,
+          daltons: minimumAmount,
         }),
       );
       transfer.nonceInfo = {
@@ -418,7 +418,7 @@ describe('SystemProgram', () => {
         SystemProgram.nonceWithdraw({
           noncePubkey: nonceAccount.publicKey,
           authorizedPubkey: newAuthority.publicKey,
-          lamports: minimumAmount,
+          daltons: minimumAmount,
           toPubkey: withdrawAccount.publicKey,
         }),
       );
@@ -443,7 +443,7 @@ describe('SystemProgram', () => {
       await helpers.airdrop({
         connection,
         address: baseAccount.publicKey,
-        amount: 2 * DALTON_PER_BBA,
+        amount: 2 * BBA_DALTON_UNIT,
       });
       const basePubkey = baseAccount.publicKey;
       const seed = 'hi there';
@@ -465,7 +465,7 @@ describe('SystemProgram', () => {
         newAccountPubkey: createAccountWithSeedAddress,
         basePubkey,
         seed,
-        lamports: minimumAmount,
+        daltons: minimumAmount,
         space,
         programId,
       };
@@ -494,14 +494,14 @@ describe('SystemProgram', () => {
       await helpers.airdrop({
         connection,
         address: uniqueFromAccount.publicKey,
-        amount: 2 * DALTON_PER_BBA,
+        amount: 2 * BBA_DALTON_UNIT,
       });
       const createAccountWithSeedParams2 = {
         fromPubkey: uniqueFromAccount.publicKey,
         newAccountPubkey: createAccountWithSeedAddress2,
         basePubkey: newBaseAccount.publicKey,
         seed,
-        lamports: minimumAmount,
+        daltons: minimumAmount,
         space,
         programId,
       };
@@ -532,7 +532,7 @@ describe('SystemProgram', () => {
           SystemProgram.transfer({
             fromPubkey: baseAccount.publicKey,
             toPubkey: transferWithSeedAddress,
-            lamports: 3 * minimumAmount,
+            daltons: 3 * minimumAmount,
           }),
         ),
         [baseAccount],
@@ -554,7 +554,7 @@ describe('SystemProgram', () => {
         fromPubkey: transferWithSeedAddress,
         basePubkey,
         toPubkey,
-        lamports: 2 * minimumAmount,
+        daltons: 2 * minimumAmount,
         seed,
         programId: programId2,
       };

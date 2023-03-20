@@ -18,12 +18,12 @@ import {u64} from '../utils/bigint';
  * Create account system transaction params
  */
 export type CreateAccountParams = {
-  /** The account that will transfer lamports to the created account */
+  /** The account that will transfer daltons to the created account */
   fromPubkey: PublicKey;
   /** Public key of the created account */
   newAccountPubkey: PublicKey;
-  /** Amount of lamports to transfer to the created account */
-  lamports: number;
+  /** Amount of daltons to transfer to the created account */
+  daltons: number;
   /** Amount of space in bytes to allocate to the created account */
   space: number;
   /** Public key of the program to assign as the owner of the created account */
@@ -34,12 +34,12 @@ export type CreateAccountParams = {
  * Transfer system transaction params
  */
 export type TransferParams = {
-  /** Account that will transfer lamports */
+  /** Account that will transfer daltons */
   fromPubkey: PublicKey;
-  /** Account that will receive transferred lamports */
+  /** Account that will receive transferred daltons */
   toPubkey: PublicKey;
-  /** Amount of lamports to transfer */
-  lamports: number | bigint;
+  /** Amount of daltons to transfer */
+  daltons: number | bigint;
 };
 
 /**
@@ -56,7 +56,7 @@ export type AssignParams = {
  * Create account with seed system transaction params
  */
 export type CreateAccountWithSeedParams = {
-  /** The account that will transfer lamports to the created account */
+  /** The account that will transfer daltons to the created account */
   fromPubkey: PublicKey;
   /** Public key of the created account. Must be pre-calculated with PublicKey.createWithSeed() */
   newAccountPubkey: PublicKey;
@@ -64,8 +64,8 @@ export type CreateAccountWithSeedParams = {
   basePubkey: PublicKey;
   /** Seed to use to derive the address of the created account. Must be the same as the seed used to create `newAccountPubkey` */
   seed: string;
-  /** Amount of lamports to transfer to the created account */
-  lamports: number;
+  /** Amount of daltons to transfer to the created account */
+  daltons: number;
   /** Amount of space in bytes to allocate to the created account */
   space: number;
   /** Public key of the program to assign as the owner of the created account */
@@ -76,28 +76,28 @@ export type CreateAccountWithSeedParams = {
  * Create nonce account system transaction params
  */
 export type CreateNonceAccountParams = {
-  /** The account that will transfer lamports to the created nonce account */
+  /** The account that will transfer daltons to the created nonce account */
   fromPubkey: PublicKey;
   /** Public key of the created nonce account */
   noncePubkey: PublicKey;
   /** Public key to set as authority of the created nonce account */
   authorizedPubkey: PublicKey;
-  /** Amount of lamports to transfer to the created nonce account */
-  lamports: number;
+  /** Amount of daltons to transfer to the created nonce account */
+  daltons: number;
 };
 
 /**
  * Create nonce account with seed system transaction params
  */
 export type CreateNonceAccountWithSeedParams = {
-  /** The account that will transfer lamports to the created nonce account */
+  /** The account that will transfer daltons to the created nonce account */
   fromPubkey: PublicKey;
   /** Public key of the created nonce account */
   noncePubkey: PublicKey;
   /** Public key to set as authority of the created nonce account */
   authorizedPubkey: PublicKey;
-  /** Amount of lamports to transfer to the created nonce account */
-  lamports: number;
+  /** Amount of daltons to transfer to the created nonce account */
+  daltons: number;
   /** Base public key to use to derive the address of the nonce account */
   basePubkey: PublicKey;
   /** Seed to use to derive the address of the nonce account */
@@ -134,8 +134,8 @@ export type WithdrawNonceParams = {
   authorizedPubkey: PublicKey;
   /** Public key of the account which will receive the withdrawn nonce account balance */
   toPubkey: PublicKey;
-  /** Amount of lamports to withdraw from the nonce account */
-  lamports: number;
+  /** Amount of daltons to withdraw from the nonce account */
+  daltons: number;
 };
 
 /**
@@ -194,14 +194,14 @@ export type AssignWithSeedParams = {
  * Transfer with seed system transaction params
  */
 export type TransferWithSeedParams = {
-  /** Account that will transfer lamports */
+  /** Account that will transfer daltons */
   fromPubkey: PublicKey;
   /** Base public key to use to derive the funding account address */
   basePubkey: PublicKey;
-  /** Account that will receive transferred lamports */
+  /** Account that will receive transferred daltons */
   toPubkey: PublicKey;
-  /** Amount of lamports to transfer */
-  lamports: number | bigint;
+  /** Amount of daltons to transfer */
+  daltons: number | bigint;
   /** Seed to use to derive the funding account address */
   seed: string;
   /** Program id to use to derive the funding account address */
@@ -210,24 +210,24 @@ export type TransferWithSeedParams = {
 
 /** Decoded transfer system transaction instruction */
 export type DecodedTransferInstruction = {
-  /** Account that will transfer lamports */
+  /** Account that will transfer daltons */
   fromPubkey: PublicKey;
-  /** Account that will receive transferred lamports */
+  /** Account that will receive transferred daltons */
   toPubkey: PublicKey;
-  /** Amount of lamports to transfer */
-  lamports: bigint;
+  /** Amount of daltons to transfer */
+  daltons: bigint;
 };
 
 /** Decoded transferWithSeed system transaction instruction */
 export type DecodedTransferWithSeedInstruction = {
-  /** Account that will transfer lamports */
+  /** Account that will transfer daltons */
   fromPubkey: PublicKey;
   /** Base public key to use to derive the funding account address */
   basePubkey: PublicKey;
-  /** Account that will receive transferred lamports */
+  /** Account that will receive transferred daltons */
   toPubkey: PublicKey;
-  /** Amount of lamports to transfer */
-  lamports: bigint;
+  /** Amount of daltons to transfer */
+  daltons: bigint;
   /** Seed to use to derive the funding account address */
   seed: string;
   /** Program id to use to derive the funding account address */
@@ -278,7 +278,7 @@ export class SystemInstruction {
     this.checkProgramId(instruction.programId);
     this.checkKeyLength(instruction.keys, 2);
 
-    const {lamports, space, programId} = decodeData(
+    const {daltons, space, programId} = decodeData(
       SYSTEM_INSTRUCTION_LAYOUTS.Create,
       instruction.data,
     );
@@ -286,7 +286,7 @@ export class SystemInstruction {
     return {
       fromPubkey: instruction.keys[0].pubkey,
       newAccountPubkey: instruction.keys[1].pubkey,
-      lamports,
+      daltons,
       space,
       programId: new PublicKey(programId),
     };
@@ -301,7 +301,7 @@ export class SystemInstruction {
     this.checkProgramId(instruction.programId);
     this.checkKeyLength(instruction.keys, 2);
 
-    const {lamports} = decodeData(
+    const {daltons} = decodeData(
       SYSTEM_INSTRUCTION_LAYOUTS.Transfer,
       instruction.data,
     );
@@ -309,7 +309,7 @@ export class SystemInstruction {
     return {
       fromPubkey: instruction.keys[0].pubkey,
       toPubkey: instruction.keys[1].pubkey,
-      lamports,
+      daltons,
     };
   }
 
@@ -322,7 +322,7 @@ export class SystemInstruction {
     this.checkProgramId(instruction.programId);
     this.checkKeyLength(instruction.keys, 3);
 
-    const {lamports, seed, programId} = decodeData(
+    const {daltons, seed, programId} = decodeData(
       SYSTEM_INSTRUCTION_LAYOUTS.TransferWithSeed,
       instruction.data,
     );
@@ -331,7 +331,7 @@ export class SystemInstruction {
       fromPubkey: instruction.keys[0].pubkey,
       basePubkey: instruction.keys[1].pubkey,
       toPubkey: instruction.keys[2].pubkey,
-      lamports,
+      daltons,
       seed,
       programId: new PublicKey(programId),
     };
@@ -427,7 +427,7 @@ export class SystemInstruction {
     this.checkProgramId(instruction.programId);
     this.checkKeyLength(instruction.keys, 2);
 
-    const {base, seed, lamports, space, programId} = decodeData(
+    const {base, seed, daltons, space, programId} = decodeData(
       SYSTEM_INSTRUCTION_LAYOUTS.CreateWithSeed,
       instruction.data,
     );
@@ -437,7 +437,7 @@ export class SystemInstruction {
       newAccountPubkey: instruction.keys[1].pubkey,
       basePubkey: new PublicKey(base),
       seed,
-      lamports,
+      daltons,
       space,
       programId: new PublicKey(programId),
     };
@@ -492,7 +492,7 @@ export class SystemInstruction {
     this.checkProgramId(instruction.programId);
     this.checkKeyLength(instruction.keys, 5);
 
-    const {lamports} = decodeData(
+    const {daltons} = decodeData(
       SYSTEM_INSTRUCTION_LAYOUTS.WithdrawNonceAccount,
       instruction.data,
     );
@@ -501,7 +501,7 @@ export class SystemInstruction {
       noncePubkey: instruction.keys[0].pubkey,
       toPubkey: instruction.keys[1].pubkey,
       authorizedPubkey: instruction.keys[4].pubkey,
-      lamports,
+      daltons,
     };
   }
 
@@ -592,13 +592,13 @@ type SystemInstructionInputData = {
     authorized: Uint8Array;
   };
   Create: IInstructionInputData & {
-    lamports: number;
+    daltons: number;
     programId: Uint8Array;
     space: number;
   };
   CreateWithSeed: IInstructionInputData & {
     base: Uint8Array;
-    lamports: number;
+    daltons: number;
     programId: Uint8Array;
     seed: string;
     space: number;
@@ -607,15 +607,15 @@ type SystemInstructionInputData = {
     authorized: Uint8Array;
   };
   Transfer: IInstructionInputData & {
-    lamports: bigint;
+    daltons: bigint;
   };
   TransferWithSeed: IInstructionInputData & {
-    lamports: bigint;
+    daltons: bigint;
     programId: Uint8Array;
     seed: string;
   };
   WithdrawNonceAccount: IInstructionInputData & {
-    lamports: number;
+    daltons: number;
   };
   UpgradeNonceAccount: IInstructionInputData;
 };
@@ -633,7 +633,7 @@ export const SYSTEM_INSTRUCTION_LAYOUTS = Object.freeze<{
     index: 0,
     layout: BufferLayout.struct<SystemInstructionInputData['Create']>([
       BufferLayout.u32('instruction'),
-      BufferLayout.ns64('lamports'),
+      BufferLayout.ns64('daltons'),
       BufferLayout.ns64('space'),
       Layout.publicKey('programId'),
     ]),
@@ -649,7 +649,7 @@ export const SYSTEM_INSTRUCTION_LAYOUTS = Object.freeze<{
     index: 2,
     layout: BufferLayout.struct<SystemInstructionInputData['Transfer']>([
       BufferLayout.u32('instruction'),
-      u64('lamports'),
+      u64('daltons'),
     ]),
   },
   CreateWithSeed: {
@@ -658,7 +658,7 @@ export const SYSTEM_INSTRUCTION_LAYOUTS = Object.freeze<{
       BufferLayout.u32('instruction'),
       Layout.publicKey('base'),
       Layout.rustString('seed'),
-      BufferLayout.ns64('lamports'),
+      BufferLayout.ns64('daltons'),
       BufferLayout.ns64('space'),
       Layout.publicKey('programId'),
     ]),
@@ -673,7 +673,7 @@ export const SYSTEM_INSTRUCTION_LAYOUTS = Object.freeze<{
     index: 5,
     layout: BufferLayout.struct<
       SystemInstructionInputData['WithdrawNonceAccount']
-    >([BufferLayout.u32('instruction'), BufferLayout.ns64('lamports')]),
+    >([BufferLayout.u32('instruction'), BufferLayout.ns64('daltons')]),
   },
   InitializeNonceAccount: {
     index: 6,
@@ -720,7 +720,7 @@ export const SYSTEM_INSTRUCTION_LAYOUTS = Object.freeze<{
     layout: BufferLayout.struct<SystemInstructionInputData['TransferWithSeed']>(
       [
         BufferLayout.u32('instruction'),
-        u64('lamports'),
+        u64('daltons'),
         Layout.rustString('seed'),
         Layout.publicKey('programId'),
       ],
@@ -756,7 +756,7 @@ export class SystemProgram {
   static createAccount(params: CreateAccountParams): TransactionInstruction {
     const type = SYSTEM_INSTRUCTION_LAYOUTS.Create;
     const data = encodeData(type, {
-      lamports: params.lamports,
+      daltons: params.daltons,
       space: params.space,
       programId: toBuffer(params.programId.toBuffer()),
     });
@@ -772,7 +772,7 @@ export class SystemProgram {
   }
 
   /**
-   * Generate a transaction instruction that transfers lamports from one account to another
+   * Generate a transaction instruction that transfers daltons from one account to another
    */
   static transfer(
     params: TransferParams | TransferWithSeedParams,
@@ -782,7 +782,7 @@ export class SystemProgram {
     if ('basePubkey' in params) {
       const type = SYSTEM_INSTRUCTION_LAYOUTS.TransferWithSeed;
       data = encodeData(type, {
-        lamports: BigInt(params.lamports),
+        daltons: BigInt(params.daltons),
         seed: params.seed,
         programId: toBuffer(params.programId.toBuffer()),
       });
@@ -793,7 +793,7 @@ export class SystemProgram {
       ];
     } else {
       const type = SYSTEM_INSTRUCTION_LAYOUTS.Transfer;
-      data = encodeData(type, {lamports: BigInt(params.lamports)});
+      data = encodeData(type, {daltons: BigInt(params.daltons)});
       keys = [
         {pubkey: params.fromPubkey, isSigner: true, isWritable: true},
         {pubkey: params.toPubkey, isSigner: false, isWritable: true},
@@ -852,7 +852,7 @@ export class SystemProgram {
     const data = encodeData(type, {
       base: toBuffer(params.basePubkey.toBuffer()),
       seed: params.seed,
-      lamports: params.lamports,
+      daltons: params.daltons,
       space: params.space,
       programId: toBuffer(params.programId.toBuffer()),
     });
@@ -885,7 +885,7 @@ export class SystemProgram {
           newAccountPubkey: params.noncePubkey,
           basePubkey: params.basePubkey,
           seed: params.seed,
-          lamports: params.lamports,
+          daltons: params.daltons,
           space: NONCE_ACCOUNT_LENGTH,
           programId: this.programId,
         }),
@@ -895,7 +895,7 @@ export class SystemProgram {
         SystemProgram.createAccount({
           fromPubkey: params.fromPubkey,
           newAccountPubkey: params.noncePubkey,
-          lamports: params.lamports,
+          daltons: params.daltons,
           space: NONCE_ACCOUNT_LENGTH,
           programId: this.programId,
         }),
@@ -960,11 +960,11 @@ export class SystemProgram {
   }
 
   /**
-   * Generate a transaction instruction that withdraws lamports from a Nonce account
+   * Generate a transaction instruction that withdraws daltons from a Nonce account
    */
   static nonceWithdraw(params: WithdrawNonceParams): TransactionInstruction {
     const type = SYSTEM_INSTRUCTION_LAYOUTS.WithdrawNonceAccount;
-    const data = encodeData(type, {lamports: params.lamports});
+    const data = encodeData(type, {daltons: params.daltons});
 
     return new TransactionInstruction({
       keys: [

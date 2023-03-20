@@ -4,7 +4,7 @@ import chaiAsPromised from 'chai-as-promised';
 import {
   Keypair,
   Connection,
-  DALTON_PER_BBA,
+  BBA_DALTON_UNIT,
   Transaction,
   ComputeBudgetProgram,
   ComputeBudgetInstruction,
@@ -19,7 +19,7 @@ describe('ComputeBudgetProgram', () => {
   it('requestUnits', () => {
     const params = {
       units: 150000,
-      additionalFee: DALTON_PER_BBA,
+      additionalFee: BBA_DALTON_UNIT,
     };
     const ix = ComputeBudgetProgram.requestUnits(params);
     const decodedParams = ComputeBudgetInstruction.decodeRequestUnits(ix);
@@ -56,12 +56,12 @@ describe('ComputeBudgetProgram', () => {
 
   it('setComputeUnitPrice', () => {
     const params = {
-      microLamports: 100_000,
+      microDaltons: 100_000,
     };
     const ix = ComputeBudgetProgram.setComputeUnitPrice(params);
     const expectedParams = {
       ...params,
-      microLamports: BigInt(params.microLamports),
+      microDaltons: BigInt(params.microDaltons),
     };
     const decodedParams =
       ComputeBudgetInstruction.decodeSetComputeUnitPrice(ix);
@@ -74,7 +74,7 @@ describe('ComputeBudgetProgram', () => {
   if (process.env.TEST_LIVE) {
     it('send live request heap ix', async () => {
       const connection = new Connection(url, 'confirmed');
-      const STARTING_AMOUNT = 2 * DALTON_PER_BBA;
+      const STARTING_AMOUNT = 2 * BBA_DALTON_UNIT;
       const baseAccount = Keypair.generate();
       const basePubkey = baseAccount.publicKey;
       await helpers.airdrop({
@@ -117,8 +117,8 @@ describe('ComputeBudgetProgram', () => {
 
     it('send live compute unit ixs', async () => {
       const connection = new Connection(url, 'confirmed');
-      const FEE_AMOUNT = DALTON_PER_BBA;
-      const STARTING_AMOUNT = 2 * DALTON_PER_BBA;
+      const FEE_AMOUNT = BBA_DALTON_UNIT;
+      const STARTING_AMOUNT = 2 * BBA_DALTON_UNIT;
       const baseAccount = Keypair.generate();
       const basePubkey = baseAccount.publicKey;
       await helpers.airdrop({
@@ -127,11 +127,11 @@ describe('ComputeBudgetProgram', () => {
         amount: STARTING_AMOUNT,
       });
 
-      // lamport fee = 2B * 1M / 1M = 2 BBA
+      // dalton fee = 2B * 1M / 1M = 2 BBA
       const prioritizationFeeTooHighTransaction = new Transaction()
         .add(
           ComputeBudgetProgram.setComputeUnitPrice({
-            microLamports: 2_000_000_000,
+            microDaltons: 2_000_000_000,
           }),
         )
         .add(
@@ -149,11 +149,11 @@ describe('ComputeBudgetProgram', () => {
         ),
       ).to.be.rejected;
 
-      // lamport fee = 1B * 1M / 1M = 1 BBA
+      // dalton fee = 1B * 1M / 1M = 1 BBA
       const validPrioritizationFeeTransaction = new Transaction()
         .add(
           ComputeBudgetProgram.setComputeUnitPrice({
-            microLamports: 1_000_000_000,
+            microDaltons: 1_000_000_000,
           }),
         )
         .add(

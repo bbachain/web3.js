@@ -15,7 +15,7 @@ import {
   EpochSchedule,
   SystemProgram,
   Transaction,
-  DALTON_PER_BBA,
+  BBA_DALTON_UNIT,
   Lockup,
   PublicKey,
   StakeProgram,
@@ -97,7 +97,7 @@ async function mockNonceAccountResponse(
     params: [nonceAccountPubkey, {encoding: 'base64'}],
     value: {
       owner: SystemProgram.programId.toBase58(),
-      lamports: DALTON_PER_BBA,
+      daltons: BBA_DALTON_UNIT,
       data: [mockNonceAccountData.toString('base64'), 'base64'],
       executable: false,
       rentEpoch: 20,
@@ -303,20 +303,20 @@ describe('Connection', function () {
       await helpers.airdrop({
         connection,
         address: account1.publicKey,
-        amount: DALTON_PER_BBA,
+        amount: BBA_DALTON_UNIT,
       });
 
       await helpers.airdrop({
         connection,
         address: account2.publicKey,
-        amount: DALTON_PER_BBA,
+        amount: BBA_DALTON_UNIT,
       });
     }
 
     const value = [
       {
         owner: '11111111111111111111111111111111',
-        lamports: DALTON_PER_BBA,
+        daltons: BBA_DALTON_UNIT,
         data: ['', 'base64'],
         executable: false,
         rentEpoch: Math.pow(2, 64) - 1,
@@ -324,7 +324,7 @@ describe('Connection', function () {
       },
       {
         owner: '11111111111111111111111111111111',
-        lamports: DALTON_PER_BBA,
+        daltons: BBA_DALTON_UNIT,
         data: ['', 'base64'],
         executable: false,
         rentEpoch: Math.pow(2, 64) - 1,
@@ -350,7 +350,7 @@ describe('Connection', function () {
     const expectedValue = [
       {
         owner: new PublicKey('11111111111111111111111111111111'),
-        lamports: DALTON_PER_BBA,
+        daltons: BBA_DALTON_UNIT,
         data: Buffer.from([]),
         executable: false,
         rentEpoch: Math.pow(2, 64) - 1,
@@ -358,7 +358,7 @@ describe('Connection', function () {
       },
       {
         owner: new PublicKey('11111111111111111111111111111111'),
-        lamports: DALTON_PER_BBA,
+        daltons: BBA_DALTON_UNIT,
         data: Buffer.from([]),
         executable: false,
         rentEpoch: Math.pow(2, 64) - 1,
@@ -378,7 +378,7 @@ describe('Connection', function () {
       await helpers.airdrop({
         connection,
         address: account0.publicKey,
-        amount: DALTON_PER_BBA,
+        amount: BBA_DALTON_UNIT,
       });
 
       const transaction = new Transaction().add(
@@ -400,7 +400,7 @@ describe('Connection', function () {
       await helpers.airdrop({
         connection,
         address: account1.publicKey,
-        amount: 0.5 * DALTON_PER_BBA,
+        amount: 0.5 * BBA_DALTON_UNIT,
       });
 
       const transaction = new Transaction().add(
@@ -433,7 +433,7 @@ describe('Connection', function () {
             account: {
               data: ['', 'base64'],
               executable: false,
-              lamports: DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+              daltons: BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
               owner: programId.publicKey.toBase58(),
               rentEpoch: 20,
             },
@@ -443,8 +443,8 @@ describe('Connection', function () {
             account: {
               data: ['', 'base64'],
               executable: false,
-              lamports:
-                0.5 * DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+              daltons:
+                0.5 * BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
               owner: programId.publicKey.toBase58(),
               rentEpoch: 20,
             },
@@ -462,13 +462,13 @@ describe('Connection', function () {
       expect(programAccounts).to.have.length(2);
       programAccounts.forEach(function (keyedAccount) {
         if (keyedAccount.pubkey.equals(account0.publicKey)) {
-          expect(keyedAccount.account.lamports).to.eq(
-            DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+          expect(keyedAccount.account.daltons).to.eq(
+            BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
           );
         } else {
           expect(keyedAccount.pubkey).to.eql(account1.publicKey);
-          expect(keyedAccount.account.lamports).to.eq(
-            0.5 * DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+          expect(keyedAccount.account.daltons).to.eq(
+            0.5 * BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
           );
         }
       });
@@ -486,7 +486,7 @@ describe('Connection', function () {
             account: {
               data: ['', 'base64'],
               executable: false,
-              lamports: DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+              daltons: BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
               owner: programId.publicKey.toBase58(),
               rentEpoch: 20,
             },
@@ -496,8 +496,8 @@ describe('Connection', function () {
             account: {
               data: ['', 'base64'],
               executable: false,
-              lamports:
-                0.5 * DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+              daltons:
+                0.5 * BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
               owner: programId.publicKey.toBase58(),
               rentEpoch: 20,
             },
@@ -513,13 +513,13 @@ describe('Connection', function () {
       expect(programAccounts).to.have.length(2);
       programAccounts.forEach(function (keyedAccount) {
         if (keyedAccount.pubkey.equals(account0.publicKey)) {
-          expect(keyedAccount.account.lamports).to.eq(
-            DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+          expect(keyedAccount.account.daltons).to.eq(
+            BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
           );
         } else {
           expect(keyedAccount.pubkey).to.eql(account1.publicKey);
-          expect(keyedAccount.account.lamports).to.eq(
-            0.5 * DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+          expect(keyedAccount.account.daltons).to.eq(
+            0.5 * BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
           );
         }
       });
@@ -545,7 +545,7 @@ describe('Connection', function () {
             account: {
               data: ['', 'base64'],
               executable: false,
-              lamports: DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+              daltons: BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
               owner: programId.publicKey.toBase58(),
               rentEpoch: 20,
             },
@@ -555,8 +555,8 @@ describe('Connection', function () {
             account: {
               data: ['', 'base64'],
               executable: false,
-              lamports:
-                0.5 * DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+              daltons:
+                0.5 * BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
               owner: programId.publicKey.toBase58(),
               rentEpoch: 20,
             },
@@ -624,7 +624,7 @@ describe('Connection', function () {
             account: {
               data: ['', 'base64'],
               executable: false,
-              lamports: DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+              daltons: BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
               owner: programId.publicKey.toBase58(),
               rentEpoch: 20,
             },
@@ -634,8 +634,8 @@ describe('Connection', function () {
             account: {
               data: ['', 'base64'],
               executable: false,
-              lamports:
-                0.5 * DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+              daltons:
+                0.5 * BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
               owner: programId.publicKey.toBase58(),
               rentEpoch: 20,
             },
@@ -654,13 +654,13 @@ describe('Connection', function () {
 
       programAccounts.forEach(function (element) {
         if (element.pubkey.equals(account0.publicKey)) {
-          expect(element.account.lamports).to.eq(
-            DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+          expect(element.account.daltons).to.eq(
+            BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
           );
         } else {
           expect(element.pubkey).to.eql(account1.publicKey);
-          expect(element.account.lamports).to.eq(
-            0.5 * DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+          expect(element.account.daltons).to.eq(
+            0.5 * BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
           );
         }
       });
@@ -715,7 +715,7 @@ describe('Connection', function () {
             account: {
               data: ['', 'base64'],
               executable: false,
-              lamports: DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+              daltons: BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
               owner: programId.publicKey.toBase58(),
               rentEpoch: 20,
             },
@@ -725,8 +725,8 @@ describe('Connection', function () {
             account: {
               data: ['', 'base64'],
               executable: false,
-              lamports:
-                0.5 * DALTON_PER_BBA - feeCalculator.lamportsPerSignature,
+              daltons:
+                0.5 * BBA_DALTON_UNIT - feeCalculator.daltonsPerSignature,
               owner: programId.publicKey.toBase58(),
               rentEpoch: 20,
             },
@@ -1046,7 +1046,7 @@ describe('Connection', function () {
             connection.confirmTransaction(
               await connection.requestAirdrop(
                 keypair.publicKey,
-                DALTON_PER_BBA,
+                BBA_DALTON_UNIT,
               ),
             ),
             helpers.latestBlockhash({connection}),
@@ -1112,12 +1112,12 @@ describe('Connection', function () {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             _,
             blockhash,
-            minimumNonceAccountRentLamports,
+            minimumNonceAccountRentDaltons,
           ] = await Promise.all([
             connection.confirmTransaction(
               await connection.requestAirdrop(
                 keypair.publicKey,
-                DALTON_PER_BBA,
+                BBA_DALTON_UNIT,
               ),
             ),
             helpers.latestBlockhash({connection}),
@@ -1127,7 +1127,7 @@ describe('Connection', function () {
             SystemProgram.createNonceAccount({
               authorizedPubkey: keypair.publicKey,
               fromPubkey: keypair.publicKey,
-              lamports: minimumNonceAccountRentLamports,
+              daltons: minimumNonceAccountRentDaltons,
               noncePubkey: nonceKeypair.publicKey,
             });
           createNonceAccountTransaction.recentBlockhash = blockhash.blockhash;
@@ -1804,7 +1804,7 @@ describe('Connection', function () {
             params: [nonceAccountPubkey.toBase58(), {encoding: 'base64'}],
             value: {
               owner: SystemProgram.programId.toBase58(),
-              lamports: DALTON_PER_BBA,
+              daltons: BBA_DALTON_UNIT,
               data: ['JUNK_DATA', 'base64'],
               executable: false,
               rentEpoch: 20,
@@ -4220,7 +4220,7 @@ describe('Connection', function () {
         commitment,
       });
       expect(bs58.decode(blockhash)).to.have.length(32);
-      expect(feeCalculator.lamportsPerSignature).to.be.at.least(0);
+      expect(feeCalculator.daltonsPerSignature).to.be.at.least(0);
     }
   });
 
@@ -4243,7 +4243,7 @@ describe('Connection', function () {
       params: [blockhash, {commitment: 'confirmed'}],
       value: {
         feeCalculator: {
-          lamportsPerSignature: 5000,
+          daltonsPerSignature: 5000,
         },
       },
       withContext: true,
@@ -4256,7 +4256,7 @@ describe('Connection', function () {
       expect(feeCalculator).not.to.be.null;
       return;
     }
-    expect(feeCalculator.lamportsPerSignature).to.eq(5000);
+    expect(feeCalculator.daltonsPerSignature).to.eq(5000);
   });
 
   it('get fee for message (legacy)', async () => {
@@ -4272,7 +4272,7 @@ describe('Connection', function () {
       SystemProgram.transfer({
         fromPubkey: accountFrom.publicKey,
         toPubkey: accountTo.publicKey,
-        lamports: 10,
+        daltons: 10,
       }),
     );
     const message = transaction.compileMessage();
@@ -4301,7 +4301,7 @@ describe('Connection', function () {
       SystemProgram.transfer({
         fromPubkey: accountFrom.publicKey,
         toPubkey: accountTo.publicKey,
-        lamports: 10,
+        daltons: 10,
       }),
     ];
 
@@ -4765,14 +4765,14 @@ describe('Connection', function () {
       const recipient = Keypair.generate();
       let signature = await connection.requestAirdrop(
         sender.publicKey,
-        2 * DALTON_PER_BBA,
+        2 * BBA_DALTON_UNIT,
       );
       await connection.confirmTransaction(signature, 'singleGossip');
       const transaction = new Transaction().add(
         SystemProgram.transfer({
           fromPubkey: sender.publicKey,
           toPubkey: recipient.publicKey,
-          lamports: DALTON_PER_BBA,
+          daltons: BBA_DALTON_UNIT,
         }),
       );
       await sendAndConfirmTransaction(connection, transaction, [sender]);
@@ -4785,7 +4785,7 @@ describe('Connection', function () {
       params: [],
       value: new Array(20).fill(0).map(() => ({
         address: Keypair.generate().publicKey.toBase58(),
-        lamports: 1000,
+        daltons: 1000,
       })),
       withContext: true,
     });
@@ -4808,7 +4808,7 @@ describe('Connection', function () {
   if (process.env.TEST_LIVE) {
     it('stake activation should return activating for new accounts', async () => {
       // todo: use `Connection.getMinimumStakeDelegation` when implemented
-      const MIN_STAKE_DELEGATION = DALTON_PER_BBA;
+      const MIN_STAKE_DELEGATION = BBA_DALTON_UNIT;
       const STAKE_ACCOUNT_MIN_BALANCE =
         await connection.getMinimumBalanceForRentExemption(StakeProgram.space);
 
@@ -4821,7 +4821,7 @@ describe('Connection', function () {
       const authorized = Keypair.generate();
       let signature = await connection.requestAirdrop(
         authorized.publicKey,
-        2 * DALTON_PER_BBA,
+        2 * BBA_DALTON_UNIT,
       );
       await connection.confirmTransaction(signature, 'confirmed');
 
@@ -4831,7 +4831,7 @@ describe('Connection', function () {
         stakePubkey: newStakeAccount.publicKey,
         authorized: new Authorized(authorized.publicKey, authorized.publicKey),
         lockup: new Lockup(0, 0, new PublicKey(0)),
-        lamports: STAKE_ACCOUNT_MIN_BALANCE + MIN_STAKE_DELEGATION,
+        daltons: STAKE_ACCOUNT_MIN_BALANCE + MIN_STAKE_DELEGATION,
       });
 
       await sendAndConfirmTransaction(
@@ -4933,18 +4933,18 @@ describe('Connection', function () {
     await helpers.airdrop({
       connection,
       address: account.publicKey,
-      amount: DALTON_PER_BBA,
+      amount: BBA_DALTON_UNIT,
     });
 
     await mockRpcResponse({
       method: 'getBalance',
       params: [account.publicKey.toBase58(), {commitment: 'confirmed'}],
-      value: DALTON_PER_BBA,
+      value: BBA_DALTON_UNIT,
       withContext: true,
     });
 
     const balance = await connection.getBalance(account.publicKey, 'confirmed');
-    expect(balance).to.eq(DALTON_PER_BBA);
+    expect(balance).to.eq(BBA_DALTON_UNIT);
 
     await mockRpcResponse({
       method: 'getAccountInfo',
@@ -4954,7 +4954,7 @@ describe('Connection', function () {
       ],
       value: {
         owner: '11111111111111111111111111111111',
-        lamports: DALTON_PER_BBA,
+        daltons: BBA_DALTON_UNIT,
         data: ['', 'base64'],
         executable: false,
         rentEpoch: 20,
@@ -4970,7 +4970,7 @@ describe('Connection', function () {
       expect(accountInfo).not.to.be.null;
       return;
     }
-    expect(accountInfo.lamports).to.eq(DALTON_PER_BBA);
+    expect(accountInfo.daltons).to.eq(BBA_DALTON_UNIT);
     expect(accountInfo.data).to.have.length(0);
     expect(accountInfo.owner).to.eql(SystemProgram.programId);
 
@@ -4982,7 +4982,7 @@ describe('Connection', function () {
       ],
       value: {
         owner: '11111111111111111111111111111111',
-        lamports: DALTON_PER_BBA,
+        daltons: BBA_DALTON_UNIT,
         data: ['', 'base64'],
         executable: false,
         rentEpoch: 20,
@@ -5000,7 +5000,7 @@ describe('Connection', function () {
       expect(parsedAccountInfo.data.parsed).not.to.be.ok;
       return;
     }
-    expect(parsedAccountInfo.lamports).to.eq(DALTON_PER_BBA);
+    expect(parsedAccountInfo.daltons).to.eq(BBA_DALTON_UNIT);
     expect(parsedAccountInfo.data).to.have.length(0);
     expect(parsedAccountInfo.owner).to.eql(SystemProgram.programId);
   });
@@ -5011,7 +5011,7 @@ describe('Connection', function () {
     await helpers.airdrop({
       connection,
       address: payer.publicKey,
-      amount: DALTON_PER_BBA,
+      amount: BBA_DALTON_UNIT,
     });
 
     const newAccount = Keypair.generate();
@@ -5019,7 +5019,7 @@ describe('Connection', function () {
       SystemProgram.createAccount({
         fromPubkey: payer.publicKey,
         newAccountPubkey: newAccount.publicKey,
-        lamports: DALTON_PER_BBA / 2,
+        daltons: BBA_DALTON_UNIT / 2,
         space: 0,
         programId: SystemProgram.programId,
       }),
@@ -5076,7 +5076,7 @@ describe('Connection', function () {
         value: {
           blockhash: 'CSymwgTNX1j3E4qhKfJAUE41nBWEwXufoYryPbkde5RR',
           feeCalculator: {
-            lamportsPerSignature: 5000,
+            daltonsPerSignature: 5000,
           },
           lastValidBlockHeight: 51,
         },
@@ -5125,7 +5125,7 @@ describe('Connection', function () {
       await helpers.airdrop({
         connection,
         address: payer.publicKey,
-        amount: DALTON_PER_BBA,
+        amount: BBA_DALTON_UNIT,
       });
 
       const recentBlockhash = await (
@@ -5156,7 +5156,7 @@ describe('Connection', function () {
       await helpers.airdrop({
         connection,
         address: payer.publicKey,
-        amount: DALTON_PER_BBA,
+        amount: BBA_DALTON_UNIT,
       });
 
       const recentBlockhash = await (
@@ -5187,7 +5187,7 @@ describe('Connection', function () {
         {
           data: ['', 'base64'],
           executable: false,
-          lamports: DALTON_PER_BBA - 5000,
+          daltons: BBA_DALTON_UNIT - 5000,
           owner: SystemProgram.programId.toBase58(),
           rentEpoch: Math.pow(2, 64) - 1,
           space: 0,
@@ -5204,13 +5204,13 @@ describe('Connection', function () {
       await helpers.airdrop({
         connection,
         address: account1.publicKey,
-        amount: DALTON_PER_BBA,
+        amount: BBA_DALTON_UNIT,
       });
 
       await helpers.airdrop({
         connection,
         address: account2.publicKey,
-        amount: DALTON_PER_BBA,
+        amount: BBA_DALTON_UNIT,
       });
 
       const recentBlockhash = await (
@@ -5284,7 +5284,7 @@ describe('Connection', function () {
         SystemProgram.transfer({
           fromPubkey: accountFrom.publicKey,
           toPubkey: accountTo.publicKey,
-          lamports: 10,
+          daltons: 10,
         }),
       );
 
@@ -5301,7 +5301,7 @@ describe('Connection', function () {
         SystemProgram.transfer({
           fromPubkey: accountFrom.publicKey,
           toPubkey: accountTo.publicKey,
-          lamports: 10,
+          daltons: 10,
         }),
       );
 
@@ -5322,7 +5322,7 @@ describe('Connection', function () {
         SystemProgram.transfer({
           fromPubkey: accountFrom.publicKey,
           toPubkey: accountTo.publicKey,
-          lamports: 9,
+          daltons: 9,
         }),
       );
       await sendAndConfirmTransaction(connection, transaction3, [accountFrom], {
@@ -5342,7 +5342,7 @@ describe('Connection', function () {
         SystemProgram.transfer({
           fromPubkey: accountFrom.publicKey,
           toPubkey: accountTo.publicKey,
-          lamports: 13,
+          daltons: 13,
         }),
       );
 
@@ -5371,11 +5371,11 @@ describe('Connection', function () {
 
       let signature = await connection.requestAirdrop(
         accountFrom.publicKey,
-        DALTON_PER_BBA,
+        BBA_DALTON_UNIT,
       );
       await connection.confirmTransaction(signature);
       expect(await connection.getBalance(accountFrom.publicKey)).to.eq(
-        DALTON_PER_BBA,
+        BBA_DALTON_UNIT,
       );
 
       const minimumAmount = await connection.getMinimumBalanceForRentExemption(
@@ -5398,14 +5398,14 @@ describe('Connection', function () {
           SystemProgram.transfer({
             fromPubkey: accountFrom.publicKey,
             toPubkey: accountTo.publicKey,
-            lamports: 100,
+            daltons: 100,
           }),
         )
         .add(
           SystemProgram.transfer({
             fromPubkey: accountTo.publicKey,
             toPubkey: accountFrom.publicKey,
-            lamports: 100,
+            daltons: 100,
           }),
         );
       signature = await connection.sendTransaction(
@@ -5428,12 +5428,12 @@ describe('Connection', function () {
         expect(response).not.to.be.null;
       }
 
-      // accountFrom may have less than DALTON_PER_BBA due to transaction fees
+      // accountFrom may have less than BBA_DALTON_UNIT due to transaction fees
       expect(
         await connection.getBalance(accountFrom.publicKey),
       ).to.be.greaterThan(0);
       expect(await connection.getBalance(accountFrom.publicKey)).to.be.at.most(
-        DALTON_PER_BBA,
+        BBA_DALTON_UNIT,
       );
 
       expect(await connection.getBalance(accountTo.publicKey)).to.eq(
@@ -5471,9 +5471,9 @@ describe('Connection', function () {
               );
             },
           );
-          connection.requestAirdrop(owner.publicKey, DALTON_PER_BBA);
+          connection.requestAirdrop(owner.publicKey, BBA_DALTON_UNIT);
           const accountInfo = await accountInfoPromise;
-          expect(accountInfo.lamports).to.eq(DALTON_PER_BBA);
+          expect(accountInfo.daltons).to.eq(BBA_DALTON_UNIT);
           expect(accountInfo.owner.equals(SystemProgram.programId)).to.be.true;
         } finally {
           if (subscriptionId != null) {
@@ -5504,14 +5504,14 @@ describe('Connection', function () {
           await helpers.airdrop({
             connection,
             address: owner.publicKey,
-            amount: DALTON_PER_BBA,
+            amount: BBA_DALTON_UNIT,
           });
 
           const transaction = new Transaction().add(
             SystemProgram.transfer({
               fromPubkey: owner.publicKey,
               toPubkey: programAccount.publicKey,
-              lamports: balanceNeeded,
+              daltons: balanceNeeded,
             }),
           );
           await sendAndConfirmTransaction(connection, transaction, [owner], {
@@ -5520,7 +5520,7 @@ describe('Connection', function () {
 
           const keyedAccountInfo = await keyedAccountInfoPromise;
           if (keyedAccountInfo.accountId.equals(programAccount.publicKey)) {
-            expect(keyedAccountInfo.accountInfo.lamports).to.eq(balanceNeeded);
+            expect(keyedAccountInfo.accountInfo.daltons).to.eq(balanceNeeded);
             expect(
               keyedAccountInfo.accountInfo.owner.equals(
                 SystemProgram.programId,
@@ -5578,7 +5578,7 @@ describe('Connection', function () {
         const owner = Keypair.generate();
         const signature = await connection.requestAirdrop(
           owner.publicKey,
-          DALTON_PER_BBA,
+          BBA_DALTON_UNIT,
         );
         const signatureResult = await new Promise<SignatureResult>(resolve => {
           // NOTE: Signature subscriptions auto-remove themselves, so there's no
@@ -5605,7 +5605,7 @@ describe('Connection', function () {
           });
 
           // Execute a transaction so that we can pickup its logs.
-          await connection.requestAirdrop(owner.publicKey, DALTON_PER_BBA);
+          await connection.requestAirdrop(owner.publicKey, BBA_DALTON_UNIT);
 
           const [logsRes, ctx] = await logPromise;
           expect(ctx.slot).to.be.greaterThan(0);
@@ -5643,7 +5643,7 @@ describe('Connection', function () {
         await helpers.airdrop({
           connection,
           address: payer.publicKey,
-          amount: 10 * DALTON_PER_BBA,
+          amount: 10 * BBA_DALTON_UNIT,
         });
       });
 
@@ -5726,7 +5726,7 @@ describe('Connection', function () {
         await helpers.airdrop({
           connection,
           address: payer.publicKey,
-          amount: 10 * DALTON_PER_BBA,
+          amount: 10 * BBA_DALTON_UNIT,
         });
       });
 
@@ -5763,7 +5763,7 @@ describe('Connection', function () {
         const {blockhash, lastValidBlockHeight} =
           await connection.getLatestBlockhash();
         const transferIxData = encodeData(SYSTEM_INSTRUCTION_LAYOUTS.Transfer, {
-          lamports: BigInt(DALTON_PER_BBA),
+          daltons: BigInt(BBA_DALTON_UNIT),
         });
         addressTableLookups = [
           {
@@ -5813,7 +5813,7 @@ describe('Connection', function () {
           {commitment: 'confirmed', dataSlice: {length: 0, offset: 0}},
         );
         expect(transferToAccount?.data.length).to.be.eq(0);
-        expect(transferToAccount?.lamports).to.be.eq(DALTON_PER_BBA);
+        expect(transferToAccount?.daltons).to.be.eq(BBA_DALTON_UNIT);
       });
 
       it('getTransaction (failure)', async () => {

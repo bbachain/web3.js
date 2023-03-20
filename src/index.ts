@@ -19,6 +19,6 @@ export * from './sysvar';
 export * from './utils';
 
 /**
- * There are 1-billion lamports in one BBA
+ * There are 1-billion daltons in one BBA
  */
-export const DALTON_PER_BBA = 1000000000;
+export const BBA_DALTON_UNIT = 1000000000;

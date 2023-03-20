@@ -16,7 +16,7 @@ const NonceAccountLayout = BufferLayout.struct<
   Readonly<{
     authorizedPubkey: Uint8Array;
     feeCalculator: Readonly<{
-      lamportsPerSignature: number;
+      daltonsPerSignature: number;
     }>;
     nonce: Uint8Array;
     state: number;
@@ -27,7 +27,7 @@ const NonceAccountLayout = BufferLayout.struct<
   BufferLayout.u32('state'),
   Layout.publicKey('authorizedPubkey'),
   Layout.publicKey('nonce'),
-  BufferLayout.struct<Readonly<{lamportsPerSignature: number}>>(
+  BufferLayout.struct<Readonly<{daltonsPerSignature: number}>>(
     [FeeCalculatorLayout],
     'feeCalculator',
   ),

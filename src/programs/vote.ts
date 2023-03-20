@@ -42,7 +42,7 @@ export type CreateVoteAccountParams = {
   fromPubkey: PublicKey;
   votePubkey: PublicKey;
   voteInit: VoteInit;
-  lamports: number;
+  daltons: number;
 };
 
 /**
@@ -83,7 +83,7 @@ export type AuthorizeVoteWithSeedParams = {
 export type WithdrawFromVoteAccountParams = {
   votePubkey: PublicKey;
   authorizedWithdrawerPubkey: PublicKey;
-  lamports: number;
+  daltons: number;
   toPubkey: PublicKey;
 };
 
@@ -216,7 +216,7 @@ export class VoteInstruction {
     this.checkProgramId(instruction.programId);
     this.checkKeyLength(instruction.keys, 3);
 
-    const {lamports} = decodeData(
+    const {daltons} = decodeData(
       VOTE_INSTRUCTION_LAYOUTS.Withdraw,
       instruction.data,
     );
@@ -224,7 +224,7 @@ export class VoteInstruction {
     return {
       votePubkey: instruction.keys[0].pubkey,
       authorizedWithdrawerPubkey: instruction.keys[2].pubkey,
-      lamports,
+      daltons,
       toPubkey: instruction.keys[1].pubkey,
     };
   }
@@ -284,7 +284,7 @@ type VoteInstructionInputData = {
     }>;
   };
   Withdraw: IInstructionInputData & {
-    lamports: number;
+    daltons: number;
   };
 };
 
@@ -312,7 +312,7 @@ const VOTE_INSTRUCTION_LAYOUTS = Object.freeze<{
     index: 3,
     layout: BufferLayout.struct<VoteInstructionInputData['Withdraw']>([
       BufferLayout.u32('instruction'),
-      BufferLayout.ns64('lamports'),
+      BufferLayout.ns64('daltons'),
     ]),
   },
   AuthorizeWithSeed: {
@@ -409,7 +409,7 @@ export class VoteProgram {
       SystemProgram.createAccount({
         fromPubkey: params.fromPubkey,
         newAccountPubkey: params.votePubkey,
-        lamports: params.lamports,
+        daltons: params.daltons,
         space: this.space,
         programId: this.programId,
       }),
@@ -501,9 +501,9 @@ export class VoteProgram {
    * Generate a transaction to withdraw from a Vote account.
    */
   static withdraw(params: WithdrawFromVoteAccountParams): Transaction {
-    const {votePubkey, authorizedWithdrawerPubkey, lamports, toPubkey} = params;
+    const {votePubkey, authorizedWithdrawerPubkey, daltons, toPubkey} = params;
     const type = VOTE_INSTRUCTION_LAYOUTS.Withdraw;
-    const data = encodeData(type, {lamports});
+    const data = encodeData(type, {daltons});
 
     const keys = [
       {pubkey: votePubkey, isSigner: false, isWritable: true},
@@ -531,7 +531,7 @@ export class VoteProgram {
     currentVoteAccountBalance: number,
     rentExemptMinimum: number,
   ): Transaction {
-    if (params.lamports > currentVoteAccountBalance - rentExemptMinimum) {
+    if (params.daltons > currentVoteAccountBalance - rentExemptMinimum) {
       throw new Error(
         'Withdraw will leave vote account with insuffcient funds.',
       );

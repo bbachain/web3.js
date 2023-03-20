@@ -98,11 +98,11 @@ export class ComputeBudgetInstruction {
     instruction: TransactionInstruction,
   ): SetComputeUnitPriceParams {
     this.checkProgramId(instruction.programId);
-    const {microLamports} = decodeData(
+    const {microDaltons} = decodeData(
       COMPUTE_BUDGET_INSTRUCTION_LAYOUTS.SetComputeUnitPrice,
       instruction.data,
     );
-    return {microLamports};
+    return {microDaltons};
   }
 
   /**
@@ -145,7 +145,7 @@ type ComputeBudgetInstructionInputData = {
 export interface RequestUnitsParams {
   /** Units to request for transaction-wide compute */
   units: number;
-  /** Prioritization fee lamports */
+  /** Prioritization fee daltons */
   additionalFee: number;
 }
 
@@ -170,7 +170,7 @@ export interface SetComputeUnitLimitParams {
  */
 export interface SetComputeUnitPriceParams {
   /** Transaction compute unit price used for prioritization fees */
-  microLamports: number | bigint;
+  microDaltons: number | bigint;
 }
 
 /**
@@ -208,7 +208,7 @@ export const COMPUTE_BUDGET_INSTRUCTION_LAYOUTS = Object.freeze<{
     index: 3,
     layout: BufferLayout.struct<
       ComputeBudgetInstructionInputData['SetComputeUnitPrice']
-    >([BufferLayout.u8('instruction'), u64('microLamports')]),
+    >([BufferLayout.u8('instruction'), u64('microDaltons')]),
   },
 });
 
@@ -270,7 +270,7 @@ export class ComputeBudgetProgram {
   ): TransactionInstruction {
     const type = COMPUTE_BUDGET_INSTRUCTION_LAYOUTS.SetComputeUnitPrice;
     const data = encodeData(type, {
-      microLamports: BigInt(params.microLamports),
+      microDaltons: BigInt(params.microDaltons),
     });
     return new TransactionInstruction({
       keys: [],

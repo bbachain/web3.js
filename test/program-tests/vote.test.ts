@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 
 import {
   Keypair,
-  DALTON_PER_BBA,
+  BBA_DALTON_UNIT,
   VoteAuthorizationLayout,
   VoteInit,
   VoteInstruction,
@@ -31,19 +31,19 @@ describe('VoteProgram', () => {
       authorizedPubkey,
       commission,
     );
-    const lamports = 123;
+    const daltons = 123;
     const transaction = VoteProgram.createAccount({
       fromPubkey,
       votePubkey: newAccountPubkey,
       voteInit,
-      lamports,
+      daltons,
     });
     expect(transaction.instructions).to.have.length(2);
     const [systemInstruction, voteInstruction] = transaction.instructions;
     const systemParams = {
       fromPubkey,
       newAccountPubkey,
-      lamports,
+      daltons,
       space: VoteProgram.space,
       programId: VoteProgram.programId,
     };
@@ -127,7 +127,7 @@ describe('VoteProgram', () => {
     const params = {
       votePubkey,
       authorizedWithdrawerPubkey,
-      lamports: 123,
+      daltons: 123,
       toPubkey,
     };
     const transaction = VoteProgram.withdraw(params);
@@ -157,21 +157,21 @@ describe('VoteProgram', () => {
           await helpers.airdrop({
             connection,
             address: derivedKeyBaseKeypair.publicKey,
-            amount: 12 * DALTON_PER_BBA,
+            amount: 12 * BBA_DALTON_UNIT,
           });
           expect(
             await connection.getBalance(derivedKeyBaseKeypair.publicKey),
-          ).to.eq(12 * DALTON_PER_BBA);
+          ).to.eq(12 * BBA_DALTON_UNIT);
         })(),
         (async () => {
           await helpers.airdrop({
             connection,
             address: newAuthorizedWithdrawer.publicKey,
-            amount: 0.1 * DALTON_PER_BBA,
+            amount: 0.1 * BBA_DALTON_UNIT,
           });
           expect(
             await connection.getBalance(newAuthorizedWithdrawer.publicKey),
-          ).to.eq(0.1 * DALTON_PER_BBA);
+          ).to.eq(0.1 * BBA_DALTON_UNIT);
         })(),
         connection.getMinimumBalanceForRentExemption(VoteProgram.space),
         PublicKey.createWithSeed(
@@ -191,7 +191,7 @@ describe('VoteProgram', () => {
           derivedKey,
           5,
         ),
-        lamports: minimumAmount + 10 * DALTON_PER_BBA,
+        daltons: minimumAmount + 10 * BBA_DALTON_UNIT,
       });
       await sendAndConfirmTransaction(
         connection,
@@ -200,7 +200,7 @@ describe('VoteProgram', () => {
         {preflightCommitment: 'confirmed'},
       );
       expect(await connection.getBalance(newVoteAccount.publicKey)).to.eq(
-        minimumAmount + 10 * DALTON_PER_BBA,
+        minimumAmount + 10 * BBA_DALTON_UNIT,
       );
 
       // Authorize a new Withdrawer.
@@ -224,7 +224,7 @@ describe('VoteProgram', () => {
       const withdraw = VoteProgram.withdraw({
         votePubkey: newVoteAccount.publicKey,
         authorizedWithdrawerPubkey: newAuthorizedWithdrawer.publicKey,
-        lamports: DALTON_PER_BBA,
+        daltons: BBA_DALTON_UNIT,
         toPubkey: recipient.publicKey,
       });
       await sendAndConfirmTransaction(
@@ -234,7 +234,7 @@ describe('VoteProgram', () => {
         {preflightCommitment: 'confirmed'},
       );
       expect(await connection.getBalance(recipient.publicKey)).to.eq(
-        DALTON_PER_BBA,
+        BBA_DALTON_UNIT,
       );
     });
 
@@ -248,20 +248,20 @@ describe('VoteProgram', () => {
       await helpers.airdrop({
         connection,
         address: payer.publicKey,
-        amount: 12 * DALTON_PER_BBA,
+        amount: 12 * BBA_DALTON_UNIT,
       });
       expect(await connection.getBalance(payer.publicKey)).to.eq(
-        12 * DALTON_PER_BBA,
+        12 * BBA_DALTON_UNIT,
       );
 
       const authorized = Keypair.generate();
       await helpers.airdrop({
         connection,
         address: authorized.publicKey,
-        amount: 12 * DALTON_PER_BBA,
+        amount: 12 * BBA_DALTON_UNIT,
       });
       expect(await connection.getBalance(authorized.publicKey)).to.eq(
-        12 * DALTON_PER_BBA,
+        12 * BBA_DALTON_UNIT,
       );
 
       const minimumAmount = await connection.getMinimumBalanceForRentExemption(
@@ -278,7 +278,7 @@ describe('VoteProgram', () => {
           authorized.publicKey,
           5,
         ),
-        lamports: minimumAmount + 10 * DALTON_PER_BBA,
+        daltons: minimumAmount + 10 * BBA_DALTON_UNIT,
       });
       await sendAndConfirmTransaction(
         connection,
@@ -287,7 +287,7 @@ describe('VoteProgram', () => {
         {preflightCommitment: 'confirmed'},
       );
       expect(await connection.getBalance(newVoteAccount.publicKey)).to.eq(
-        minimumAmount + 10 * DALTON_PER_BBA,
+        minimumAmount + 10 * BBA_DALTON_UNIT,
       );
 
       // Withdraw from Vote account
@@ -299,7 +299,7 @@ describe('VoteProgram', () => {
           {
             votePubkey: newVoteAccount.publicKey,
             authorizedWithdrawerPubkey: authorized.publicKey,
-            lamports: voteBalance - minimumAmount + 1,
+            daltons: voteBalance - minimumAmount + 1,
             toPubkey: recipient.publicKey,
           },
           voteBalance,
@@ -310,25 +310,25 @@ describe('VoteProgram', () => {
       let withdraw = VoteProgram.withdraw({
         votePubkey: newVoteAccount.publicKey,
         authorizedWithdrawerPubkey: authorized.publicKey,
-        lamports: DALTON_PER_BBA,
+        daltons: BBA_DALTON_UNIT,
         toPubkey: recipient.publicKey,
       });
       await sendAndConfirmTransaction(connection, withdraw, [authorized], {
         preflightCommitment: 'confirmed',
       });
       expect(await connection.getBalance(recipient.publicKey)).to.eq(
-        DALTON_PER_BBA,
+        BBA_DALTON_UNIT,
       );
 
       const newAuthorizedWithdrawer = Keypair.generate();
       await helpers.airdrop({
         connection,
         address: newAuthorizedWithdrawer.publicKey,
-        amount: DALTON_PER_BBA,
+        amount: BBA_DALTON_UNIT,
       });
       expect(
         await connection.getBalance(newAuthorizedWithdrawer.publicKey),
-      ).to.eq(DALTON_PER_BBA);
+      ).to.eq(BBA_DALTON_UNIT);
 
       // Authorize a new Withdrawer.
       let authorize = VoteProgram.authorize({
@@ -345,7 +345,7 @@ describe('VoteProgram', () => {
       withdraw = VoteProgram.withdraw({
         votePubkey: newVoteAccount.publicKey,
         authorizedWithdrawerPubkey: authorized.publicKey,
-        lamports: minimumAmount,
+        daltons: minimumAmount,
         toPubkey: recipient.publicKey,
       });
       await expect(
@@ -359,7 +359,7 @@ describe('VoteProgram', () => {
       withdraw = VoteProgram.withdraw({
         votePubkey: newVoteAccount.publicKey,
         authorizedWithdrawerPubkey: newAuthorizedWithdrawer.publicKey,
-        lamports: DALTON_PER_BBA,
+        daltons: BBA_DALTON_UNIT,
         toPubkey: recipient.publicKey,
       });
       await sendAndConfirmTransaction(
@@ -371,17 +371,17 @@ describe('VoteProgram', () => {
         },
       );
       expect(await connection.getBalance(recipient.publicKey)).to.eq(
-        DALTON_PER_BBA,
+        BBA_DALTON_UNIT,
       );
 
       const newAuthorizedVoter = Keypair.generate();
       await helpers.airdrop({
         connection,
         address: newAuthorizedVoter.publicKey,
-        amount: DALTON_PER_BBA,
+        amount: BBA_DALTON_UNIT,
       });
       expect(await connection.getBalance(newAuthorizedVoter.publicKey)).to.eq(
-        DALTON_PER_BBA,
+        BBA_DALTON_UNIT,
       );
 
       // The authorized Withdrawer may sign to authorize a new Voter, see

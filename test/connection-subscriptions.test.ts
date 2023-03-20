@@ -94,7 +94,7 @@ describe('Subscriptions', () => {
             value: {
               data: Buffer.from(''),
               executable: false,
-              lamports: 0,
+              daltons: 0,
               owner: PublicKey.default.toBase58(),
               rentEpoch: 0,
               space: 0,
@@ -208,7 +208,7 @@ describe('Subscriptions', () => {
               account: {
                 data: Buffer.from(''),
                 executable: false,
-                lamports: 0,
+                daltons: 0,
                 owner: PublicKey.default.toBase58(),
                 rentEpoch: 0,
                 space: 0,

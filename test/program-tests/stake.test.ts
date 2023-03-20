@@ -8,7 +8,7 @@ import {
   Lockup,
   PublicKey,
   sendAndConfirmTransaction,
-  DALTON_PER_BBA,
+  BBA_DALTON_UNIT,
   StakeAuthorizationLayout,
   StakeInstruction,
   StakeProgram,
@@ -32,7 +32,7 @@ describe('StakeProgram', () => {
     const authorizedPubkey = Keypair.generate().publicKey;
     const authorized = new Authorized(authorizedPubkey, authorizedPubkey);
     const lockup = new Lockup(0, 0, fromPubkey);
-    const lamports = 123;
+    const daltons = 123;
     const transaction = StakeProgram.createAccountWithSeed({
       fromPubkey,
       stakePubkey: newAccountPubkey,
@@ -40,7 +40,7 @@ describe('StakeProgram', () => {
       seed,
       authorized,
       lockup,
-      lamports,
+      daltons,
     });
     expect(transaction.instructions).to.have.length(2);
     const [systemInstruction, stakeInstruction] = transaction.instructions;
@@ -49,7 +49,7 @@ describe('StakeProgram', () => {
       newAccountPubkey,
       basePubkey: fromPubkey,
       seed,
-      lamports,
+      daltons,
       space: StakeProgram.space,
       programId: StakeProgram.programId,
     };
@@ -68,20 +68,20 @@ describe('StakeProgram', () => {
     const authorizedPubkey = Keypair.generate().publicKey;
     const authorized = new Authorized(authorizedPubkey, authorizedPubkey);
     const lockup = new Lockup(0, 0, fromPubkey);
-    const lamports = 123;
+    const daltons = 123;
     const transaction = StakeProgram.createAccount({
       fromPubkey,
       stakePubkey: newAccountPubkey,
       authorized,
       lockup,
-      lamports,
+      daltons,
     });
     expect(transaction.instructions).to.have.length(2);
     const [systemInstruction, stakeInstruction] = transaction.instructions;
     const systemParams = {
       fromPubkey,
       newAccountPubkey,
-      lamports,
+      daltons,
       space: StakeProgram.space,
       programId: StakeProgram.programId,
     };
@@ -202,7 +202,7 @@ describe('StakeProgram', () => {
       stakePubkey,
       authorizedPubkey,
       splitStakePubkey,
-      lamports: 123,
+      daltons: 123,
     };
     const transaction = StakeProgram.split(params);
     expect(transaction.instructions).to.have.length(2);
@@ -210,7 +210,7 @@ describe('StakeProgram', () => {
     const systemParams = {
       fromPubkey: authorizedPubkey,
       newAccountPubkey: splitStakePubkey,
-      lamports: 0,
+      daltons: 0,
       space: StakeProgram.space,
       programId: StakeProgram.programId,
     };
@@ -223,7 +223,7 @@ describe('StakeProgram', () => {
   it('splitWithSeed', async () => {
     const stakePubkey = Keypair.generate().publicKey;
     const authorizedPubkey = Keypair.generate().publicKey;
-    const lamports = 123;
+    const daltons = 123;
     const seed = 'test string';
     const basePubkey = Keypair.generate().publicKey;
     const splitStakePubkey = await PublicKey.createWithSeed(
@@ -234,7 +234,7 @@ describe('StakeProgram', () => {
     const transaction = StakeProgram.splitWithSeed({
       stakePubkey,
       authorizedPubkey,
-      lamports,
+      daltons,
       splitStakePubkey,
       basePubkey,
       seed,
@@ -255,7 +255,7 @@ describe('StakeProgram', () => {
       stakePubkey,
       authorizedPubkey,
       splitStakePubkey,
-      lamports,
+      daltons,
     };
     expect(splitParams).to.eql(StakeInstruction.decodeSplit(stakeInstruction));
   });
@@ -283,7 +283,7 @@ describe('StakeProgram', () => {
       stakePubkey,
       authorizedPubkey,
       toPubkey,
-      lamports: 123,
+      daltons: 123,
     };
     const transaction = StakeProgram.withdraw(params);
     expect(transaction.instructions).to.have.length(1);
@@ -300,7 +300,7 @@ describe('StakeProgram', () => {
       stakePubkey,
       authorizedPubkey,
       toPubkey,
-      lamports: 123,
+      daltons: 123,
       custodianPubkey,
     };
     const transaction = StakeProgram.withdraw(params);
@@ -337,7 +337,7 @@ describe('StakeProgram', () => {
       seed,
       authorized: new Authorized(authorized.publicKey, authorized.publicKey),
       lockup: new Lockup(0, 0, from.publicKey),
-      lamports: amount,
+      daltons: amount,
     });
     const createWithSeedTransaction = new Transaction({
       blockhash: recentBlockhash,
@@ -402,14 +402,14 @@ describe('StakeProgram', () => {
       await helpers.airdrop({
         connection,
         address: payer.publicKey,
-        amount: 10 * DALTON_PER_BBA,
+        amount: 10 * BBA_DALTON_UNIT,
       });
 
       const authorized = Keypair.generate();
       await helpers.airdrop({
         connection,
         address: authorized.publicKey,
-        amount: 2 * DALTON_PER_BBA,
+        amount: 2 * BBA_DALTON_UNIT,
       });
 
       const recipient = Keypair.generate();
@@ -429,7 +429,7 @@ describe('StakeProgram', () => {
             authorized.publicKey,
             authorized.publicKey,
           ),
-          lamports: STAKE_ACCOUNT_MIN_BALANCE + MIN_STAKE_DELEGATION,
+          daltons: STAKE_ACCOUNT_MIN_BALANCE + MIN_STAKE_DELEGATION,
         });
 
         await sendAndConfirmTransaction(
@@ -461,7 +461,7 @@ describe('StakeProgram', () => {
       );
 
       const WITHDRAW_AMOUNT = 1;
-      const INITIAL_STAKE_DELEGATION = 5 * DALTON_PER_BBA;
+      const INITIAL_STAKE_DELEGATION = 5 * BBA_DALTON_UNIT;
       let createAndInitializeWithSeed = StakeProgram.createAccountWithSeed({
         fromPubkey: payer.publicKey,
         stakePubkey: newAccountPubkey,
@@ -469,7 +469,7 @@ describe('StakeProgram', () => {
         seed,
         authorized: new Authorized(authorized.publicKey, authorized.publicKey),
         lockup: new Lockup(0, 0, new PublicKey(0)),
-        lamports: STAKE_ACCOUNT_MIN_BALANCE + INITIAL_STAKE_DELEGATION,
+        daltons: STAKE_ACCOUNT_MIN_BALANCE + INITIAL_STAKE_DELEGATION,
       });
 
       await sendAndConfirmTransaction(
@@ -497,7 +497,7 @@ describe('StakeProgram', () => {
         stakePubkey: newAccountPubkey,
         authorizedPubkey: authorized.publicKey,
         toPubkey: recipient.publicKey,
-        lamports: WITHDRAW_AMOUNT,
+        daltons: WITHDRAW_AMOUNT,
       });
       await expect(
         sendAndConfirmTransaction(connection, withdraw, [authorized], {
@@ -526,7 +526,7 @@ describe('StakeProgram', () => {
         stakePubkey: newAccountPubkey,
         authorizedPubkey: authorized.publicKey,
         toPubkey: recipient.publicKey,
-        lamports: WITHDRAW_AMOUNT,
+        daltons: WITHDRAW_AMOUNT,
       });
 
       await sendAndConfirmTransaction(connection, withdraw, [authorized], {
@@ -543,7 +543,7 @@ describe('StakeProgram', () => {
         stakePubkey: newAccountPubkey,
         authorizedPubkey: authorized.publicKey,
         splitStakePubkey: newStake.publicKey,
-        lamports: STAKE_ACCOUNT_MIN_BALANCE + MIN_STAKE_DELEGATION,
+        daltons: STAKE_ACCOUNT_MIN_BALANCE + MIN_STAKE_DELEGATION,
       });
       await sendAndConfirmTransaction(
         connection,
@@ -566,7 +566,7 @@ describe('StakeProgram', () => {
       let splitWithSeed = StakeProgram.splitWithSeed({
         stakePubkey: newAccountPubkey,
         authorizedPubkey: authorized.publicKey,
-        lamports: STAKE_ACCOUNT_MIN_BALANCE + MIN_STAKE_DELEGATION,
+        daltons: STAKE_ACCOUNT_MIN_BALANCE + MIN_STAKE_DELEGATION,
         splitStakePubkey: newStake2,
         basePubkey: payer.publicKey,
         seed: seed2,
@@ -605,7 +605,7 @@ describe('StakeProgram', () => {
         splitStakePubkey: newStake.publicKey,
         // use a different amount than the first split so that this
         // transaction is different and won't require a fresh blockhash
-        lamports: STAKE_ACCOUNT_MIN_BALANCE + MIN_STAKE_DELEGATION,
+        daltons: STAKE_ACCOUNT_MIN_BALANCE + MIN_STAKE_DELEGATION,
       });
       await sendAndConfirmTransaction(
         connection,
@@ -618,7 +618,7 @@ describe('StakeProgram', () => {
 
       // Authorize to new account
       const newAuthorized = Keypair.generate();
-      await connection.requestAirdrop(newAuthorized.publicKey, DALTON_PER_BBA);
+      await connection.requestAirdrop(newAuthorized.publicKey, BBA_DALTON_UNIT);
 
       let authorize = StakeProgram.authorize({
         stakePubkey: newAccountPubkey,

@@ -165,7 +165,7 @@ const recentBlockhash = async ({
     value: {
       blockhash,
       feeCalculator: {
-        lamportsPerSignature: 42,
+        daltonsPerSignature: 42,
       },
     },
     withContext: true,

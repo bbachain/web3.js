@@ -19,7 +19,7 @@ describe('ValidatorInfo', () => {
 
     // Config data string steps:
     // 1) Generate a keypair
-    // 2) Airdrop lamports to the account
+    // 2) Airdrop daltons to the account
     // 3) Modify the `solana-validator-info` tool
     //   a) Remove the keybase id verification step
     //   b) Print base64 account data in the `get --all` codepath

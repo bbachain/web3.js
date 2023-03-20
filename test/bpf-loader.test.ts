@@ -33,7 +33,7 @@ if (process.env.TEST_LIVE) {
 
         const {feeCalculator} = await connection.getRecentBlockhash();
         const fees =
-          feeCalculator.lamportsPerSignature *
+          feeCalculator.daltonsPerSignature *
           BpfLoader.getMinNumSignatures(programData.length);
         const payerBalance = await connection.getMinimumBalanceForRentExemption(
           0,
@@ -61,7 +61,7 @@ if (process.env.TEST_LIVE) {
         await helpers.airdrop({
           connection,
           address: insufficientPayerAccount.publicKey,
-          amount: 2 * feeCalculator.lamportsPerSignature * 8,
+          amount: 2 * feeCalculator.daltonsPerSignature * 8,
         });
 
         const failedLoad = BpfLoader.load(

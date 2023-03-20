@@ -50,7 +50,7 @@ export type CloseLookupTableParams = {
   lookupTable: PublicKey;
   /** Account which is the current authority. */
   authority: PublicKey;
-  /** Recipient of closed account lamports. */
+  /** Recipient of closed account daltons. */
   recipient: PublicKey;
 };
 
