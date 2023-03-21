@@ -4,7 +4,7 @@ import {Buffer} from 'buffer';
 import {sha256} from '@noble/hashes/sha256';
 
 import {isOnCurve} from './utils/ed25519';
-import {Struct, SOLANA_SCHEMA} from './utils/borsh-schema';
+import {Struct, BBACHAIN_SCHEMA} from './utils/borsh-schema';
 import {toBuffer} from './utils/to-buffer';
 
 /**
@@ -244,7 +244,7 @@ export class PublicKey extends Struct {
   }
 }
 
-SOLANA_SCHEMA.set(PublicKey, {
+BBACHAIN_SCHEMA.set(PublicKey, {
   kind: 'struct',
   fields: [['_bn', 'u256']],
 });
