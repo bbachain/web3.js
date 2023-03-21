@@ -25,8 +25,8 @@ function nextPowerOfTwo(n: number) {
 
 /**
  * Epoch schedule
- * (see https://docs.bbachain.com/terminology#epoch)
- * Can be retrieved with the {@link Connection.getEpochSchedule} method
+ * (see https://docs.solana.com/terminology#epoch)
+ * Can be retrieved with the {@link connection.getEpochSchedule} method
  */
 export class EpochSchedule {
   /** The maximum number of slots in each epoch */

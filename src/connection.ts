@@ -1,12 +1,7 @@
-import HttpKeepAliveAgent, {
-  HttpsAgent as HttpsKeepAliveAgent,
-} from 'agentkeepalive';
 import bs58 from 'bs58';
 import {Buffer} from 'buffer';
 // @ts-ignore
 import fastStableStringify from 'fast-stable-stringify';
-import type {Agent as NodeHttpAgent} from 'http';
-import {Agent as NodeHttpsAgent} from 'https';
 import {
   type as pick,
   number,
@@ -26,16 +21,16 @@ import {
   any,
 } from 'superstruct';
 import type {Struct} from 'superstruct';
+import {Client as RpcWebSocketClient} from 'rpc-websockets';
 import RpcClient from 'jayson/lib/client/browser';
-import {JSONRPCError} from 'jayson';
 
+import {AgentManager} from './agent-manager';
 import {EpochSchedule} from './epoch-schedule';
-import {SendTransactionError, BBAChainJSONRPCError} from './errors';
+import {SendTransactionError, SolanaJSONRPCError} from './errors';
 import fetchImpl, {Response} from './fetch-impl';
-import {DurableNonce, NonceAccount} from './nonce-account';
+import {NonceAccount} from './nonce-account';
 import {PublicKey} from './publickey';
 import {Signer} from './keypair';
-import RpcWebSocketClient from './rpc-websocket';
 import {MS_PER_SLOT} from './timing';
 import {
   Transaction,
@@ -50,7 +45,6 @@ import {sleep} from './utils/sleep';
 import {toBuffer} from './utils/to-buffer';
 import {
   TransactionExpiredBlockheightExceededError,
-  TransactionExpiredNonceInvalidError,
   TransactionExpiredTimeoutError,
 } from './transaction/expiry-custom-errors';
 import {makeWebsocketUrl} from './utils/makeWebsocketUrl';
@@ -94,10 +88,6 @@ type ClientSubscriptionId = number;
 /** @internal */ type ServerSubscriptionId = number;
 /** @internal */ type SubscriptionConfigHash = string;
 /** @internal */ type SubscriptionDisposeFn = () => Promise<void>;
-/** @internal */ type SubscriptionStateChangeCallback = (
-  nextState: StatefulSubscription['state'],
-) => void;
-/** @internal */ type SubscriptionStateChangeDisposeFn = () => void;
 /**
  * @internal
  * Every subscription contains the args used to open the subscription with
@@ -315,46 +305,9 @@ export type BlockhashWithExpiryBlockHeight = Readonly<{
  * A strategy for confirming transactions that uses the last valid
  * block height for a given blockhash to check for transaction expiration.
  */
-export type BlockheightBasedTransactionConfirmationStrategy =
-  BaseTransactionConfirmationStrategy & BlockhashWithExpiryBlockHeight;
-
-/**
- * A strategy for confirming durable nonce transactions.
- */
-export type DurableNonceTransactionConfirmationStrategy =
-  BaseTransactionConfirmationStrategy & {
-    /**
-     * The lowest slot at which to fetch the nonce value from the
-     * nonce account. This should be no lower than the slot at
-     * which the last-known value of the nonce was fetched.
-     */
-    minContextSlot: number;
-    /**
-     * The account where the current value of the nonce is stored.
-     */
-    nonceAccountPubkey: PublicKey;
-    /**
-     * The nonce value that was used to sign the transaction
-     * for which confirmation is being sought.
-     */
-    nonceValue: DurableNonce;
-  };
-
-/**
- * Properties shared by all transaction confirmation strategies
- */
-export type BaseTransactionConfirmationStrategy = Readonly<{
-  /** A signal that, when aborted, cancels any outstanding transaction confirmation operations */
-  abortSignal?: AbortSignal;
+export type BlockheightBasedTransactionConfirmationStrategy = {
   signature: TransactionSignature;
-}>;
-
-/**
- * This type represents all transaction confirmation strategies
- */
-export type TransactionConfirmationStrategy =
-  | BlockheightBasedTransactionConfirmationStrategy
-  | DurableNonceTransactionConfirmationStrategy;
+} & BlockhashWithExpiryBlockHeight;
 
 /* @internal */
 function assertEndpointUrl(putativeUrl: string) {
@@ -537,18 +490,6 @@ export type GetBalanceConfig = {
 export type GetBlockConfig = {
   /** The level of finality desired */
   commitment?: Finality;
-  /**
-   * Whether to populate the rewards array. If parameter not provided, the default includes rewards.
-   */
-  rewards?: boolean;
-  /**
-   * Level of transaction detail to return, either "full", "accounts", "signatures", or "none". If
-   * parameter not provided, the default detail level is "full". If "accounts" are requested,
-   * transaction details only include signatures and an annotated list of accounts in each
-   * transaction. Transaction metadata is limited to only: fee, err, pre_balances, post_balances,
-   * pre_token_balances, and post_token_balances.
-   */
-  transactionDetails?: 'accounts' | 'full' | 'none' | 'signatures';
 };
 
 /**
@@ -559,18 +500,6 @@ export type GetVersionedBlockConfig = {
   commitment?: Finality;
   /** The max transaction version to return in responses. If the requested transaction is a higher version, an error will be returned */
   maxSupportedTransactionVersion?: number;
-  /**
-   * Whether to populate the rewards array. If parameter not provided, the default includes rewards.
-   */
-  rewards?: boolean;
-  /**
-   * Level of transaction detail to return, either "full", "accounts", "signatures", or "none". If
-   * parameter not provided, the default detail level is "full". If "accounts" are requested,
-   * transaction details only include signatures and an annotated list of accounts in each
-   * transaction. Transaction metadata is limited to only: fee, err, pre_balances, post_balances,
-   * pre_token_balances, and post_token_balances.
-   */
-  transactionDetails?: 'accounts' | 'full' | 'none' | 'signatures';
 };
 
 /**
@@ -737,7 +666,7 @@ export type VoteAccountStatus = {
 
 /**
  * Network Inflation
- * (see https://docs.bbachain.com/implemented-proposals/ed_overview)
+ * (see https://docs.solana.com/implemented-proposals/ed_overview)
  */
 export type InflationGovernor = {
   foundation: number;
@@ -767,8 +696,6 @@ export type InflationReward = {
   amount: number;
   /** post balance of the account in daltons */
   postBalance: number;
-  /** vote account commission when the reward was credited */
-  commission?: number | null;
 };
 
 /**
@@ -782,32 +709,10 @@ const GetInflationRewardResult = jsonRpcResult(
         effectiveSlot: number(),
         amount: number(),
         postBalance: number(),
-        commission: optional(nullable(number())),
       }),
     ),
   ),
 );
-
-export type InflationRate = {
-  /** total inflation */
-  total: number;
-  /** inflation allocated to validators */
-  validator: number;
-  /** inflation allocated to the foundation */
-  foundation: number;
-  /** epoch for which these values are valid */
-  epoch: number;
-};
-
-/**
- * Expected JSON RPC response for the "getInflationRate" message
- */
-const GetInflationRateResult = pick({
-  total: number(),
-  validator: number(),
-  foundation: number(),
-  epoch: number(),
-});
 
 /**
  * Information about the current epoch
@@ -840,7 +745,7 @@ const GetEpochScheduleResult = pick({
 
 /**
  * Leader schedule
- * (see https://docs.bbachain.com/terminology#leader-schedule)
+ * (see https://docs.solana.com/terminology#leader-schedule)
  */
 export type LeaderSchedule = {
   [address: string]: number[];
@@ -968,7 +873,7 @@ export type TokenBalance = {
 /**
  * Metadata for a parsed confirmed transaction on the ledger
  *
- * @deprecated Deprecated since BBAChain v1.8.0. Please use {@link ParsedTransactionMeta} instead.
+ * @deprecated Deprecated since Solana v1.8.0. Please use {@link ParsedTransactionMeta} instead.
  */
 export type ParsedConfirmedTransactionMeta = ParsedTransactionMeta;
 
@@ -1091,7 +996,7 @@ type MessageResponse = {
 /**
  * A confirmed transaction on the ledger
  *
- * @deprecated Deprecated since BBAChain v1.8.0.
+ * @deprecated Deprecated since Solana v1.8.0.
  */
 export type ConfirmedTransaction = {
   /** The slot during which the transaction was processed */
@@ -1181,7 +1086,7 @@ export type ParsedTransaction = {
 /**
  * A parsed and confirmed transaction on the ledger
  *
- * @deprecated Deprecated since BBAChain v1.8.0. Please use {@link ParsedTransactionWithMeta} instead.
+ * @deprecated Deprecated since Solana v1.8.0. Please use {@link ParsedTransactionWithMeta} instead.
  */
 export type ParsedConfirmedTransaction = ParsedTransactionWithMeta;
 
@@ -1235,22 +1140,10 @@ export type BlockResponse = {
     postBalance: number | null;
     /** Type of reward received */
     rewardType: string | null;
-    /** Vote account commission when the reward was credited, only present for voting and staking rewards */
-    commission?: number | null;
   }>;
   /** The unix timestamp of when the block was processed */
   blockTime: number | null;
 };
-
-/**
- * A processed block fetched from the RPC API where the `transactionDetails` mode is `accounts`
- */
-export type AccountsModeBlockResponse = VersionedAccountsModeBlockResponse;
-
-/**
- * A processed block fetched from the RPC API where the `transactionDetails` mode is `none`
- */
-export type NoneModeBlockResponse = VersionedNoneModeBlockResponse;
 
 /**
  * A block with parsed transactions
@@ -1281,41 +1174,12 @@ export type ParsedBlockResponse = {
     postBalance: number | null;
     /** Type of reward received */
     rewardType: string | null;
-    /** Vote account commission when the reward was credited, only present for voting and staking rewards */
-    commission?: number | null;
   }>;
   /** The unix timestamp of when the block was processed */
   blockTime: number | null;
   /** The number of blocks beneath this block */
   blockHeight: number | null;
 };
-
-/**
- * A block with parsed transactions where the `transactionDetails` mode is `accounts`
- */
-export type ParsedAccountsModeBlockResponse = Omit<
-  ParsedBlockResponse,
-  'transactions'
-> & {
-  transactions: Array<
-    Omit<ParsedBlockResponse['transactions'][number], 'transaction'> & {
-      transaction: Pick<
-        ParsedBlockResponse['transactions'][number]['transaction'],
-        'signatures'
-      > & {
-        accountKeys: ParsedMessageAccount[];
-      };
-    }
-  >;
-};
-
-/**
- * A block with parsed transactions where the `transactionDetails` mode is `none`
- */
-export type ParsedNoneModeBlockResponse = Omit<
-  ParsedBlockResponse,
-  'transactions'
->;
 
 /**
  * A processed block fetched from the RPC API
@@ -1351,44 +1215,15 @@ export type VersionedBlockResponse = {
     postBalance: number | null;
     /** Type of reward received */
     rewardType: string | null;
-    /** Vote account commission when the reward was credited, only present for voting and staking rewards */
-    commission?: number | null;
   }>;
   /** The unix timestamp of when the block was processed */
   blockTime: number | null;
 };
 
 /**
- * A processed block fetched from the RPC API where the `transactionDetails` mode is `accounts`
- */
-export type VersionedAccountsModeBlockResponse = Omit<
-  VersionedBlockResponse,
-  'transactions'
-> & {
-  transactions: Array<
-    Omit<VersionedBlockResponse['transactions'][number], 'transaction'> & {
-      transaction: Pick<
-        VersionedBlockResponse['transactions'][number]['transaction'],
-        'signatures'
-      > & {
-        accountKeys: ParsedMessageAccount[];
-      };
-    }
-  >;
-};
-
-/**
- * A processed block fetched from the RPC API where the `transactionDetails` mode is `none`
- */
-export type VersionedNoneModeBlockResponse = Omit<
-  VersionedBlockResponse,
-  'transactions'
->;
-
-/**
  * A confirmed block on the ledger
  *
- * @deprecated Deprecated since BBAChain v1.8.0.
+ * @deprecated Deprecated since Solana v1.8.0.
  */
 export type ConfirmedBlock = {
   /** Blockhash of this block */
@@ -1408,7 +1243,6 @@ export type ConfirmedBlock = {
     daltons: number;
     postBalance: number | null;
     rewardType: string | null;
-    commission?: number | null;
   }>;
   /** The unix timestamp of when the block was processed */
   blockTime: number | null;
@@ -1492,54 +1326,11 @@ function createRpcClient(
   customFetch?: FetchFn,
   fetchMiddleware?: FetchMiddleware,
   disableRetryOnRateLimit?: boolean,
-  httpAgent?: NodeHttpAgent | NodeHttpsAgent | false,
 ): RpcClient {
   const fetch = customFetch ? customFetch : fetchImpl;
-  let agent: NodeHttpAgent | NodeHttpsAgent | undefined;
-  if (process.env.BROWSER) {
-    if (httpAgent != null) {
-      console.warn(
-        'You have supplied an `httpAgent` when creating a `Connection` in a browser environment.' +
-          'It has been ignored; `httpAgent` is only used in Node environments.',
-      );
-    }
-  } else {
-    if (httpAgent == null) {
-      if (process.env.NODE_ENV !== 'test') {
-        const agentOptions = {
-          // One second fewer than the BBAChain RPC's keepalive timeout.
-          // Read more: https://github.com/solana-labs/solana/issues/27859#issuecomment-1340097889
-          freeSocketTimeout: 19000,
-          keepAlive: true,
-          maxSockets: 25,
-        };
-        if (url.startsWith('https:')) {
-          agent = new HttpsKeepAliveAgent(agentOptions);
-        } else {
-          agent = new HttpKeepAliveAgent(agentOptions);
-        }
-      }
-    } else {
-      if (httpAgent !== false) {
-        const isHttps = url.startsWith('https:');
-        if (isHttps && !(httpAgent instanceof NodeHttpsAgent)) {
-          throw new Error(
-            'The endpoint `' +
-              url +
-              '` can only be paired with an `https.Agent`. You have, instead, supplied an ' +
-              '`http.Agent` through `httpAgent`.',
-          );
-        } else if (!isHttps && httpAgent instanceof NodeHttpsAgent) {
-          throw new Error(
-            'The endpoint `' +
-              url +
-              '` can only be paired with an `http.Agent`. You have, instead, supplied an ' +
-              '`https.Agent` through `httpAgent`.',
-          );
-        }
-        agent = httpAgent;
-      }
-    }
+  let agentManager: AgentManager | undefined;
+  if (!process.env.BROWSER) {
+    agentManager = new AgentManager(url.startsWith('https:') /* useHttps */);
   }
 
   let fetchWithMiddleware: FetchFn | undefined;
@@ -1562,6 +1353,7 @@ function createRpcClient(
   }
 
   const clientBrowser = new RpcClient(async (request, callback) => {
+    const agent = agentManager ? agentManager.requestStart() : undefined;
     const options = {
       method: 'POST',
       body: request,
@@ -1611,6 +1403,8 @@ function createRpcClient(
       }
     } catch (err) {
       if (err instanceof Error) callback(err);
+    } finally {
+      agentManager && agentManager.requestEnd();
     }
   }, {});
 
@@ -1656,11 +1450,6 @@ function createRpcBatchRequest(client: RpcClient): RpcBatchRequest {
  * Expected JSON RPC response for the "getInflationGovernor" message
  */
 const GetInflationGovernorRpcResult = jsonRpcResult(GetInflationGovernorResult);
-
-/**
- * Expected JSON RPC response for the "getInflationRate" message
- */
-const GetInflationRateRpcResult = jsonRpcResult(GetInflationRateResult);
 
 /**
  * Expected JSON RPC response for the "getEpochInfo" message
@@ -2164,18 +1953,6 @@ const ConfirmedTransactionResult = pick({
   }),
 });
 
-const AnnotatedAccountKey = pick({
-  pubkey: PublicKeyFromString,
-  signer: boolean(),
-  writable: boolean(),
-  source: optional(union([literal('transaction'), literal('lookupTable')])),
-});
-
-const ConfirmedTransactionAccountsModeResult = pick({
-  accountKeys: array(AnnotatedAccountKey),
-  signatures: array(string()),
-});
-
 const ParsedInstructionResult = pick({
   parsed: unknown(),
   program: string(),
@@ -2224,7 +2001,16 @@ const ParsedOrRawInstruction = coerce(
 const ParsedConfirmedTransactionResult = pick({
   signatures: array(string()),
   message: pick({
-    accountKeys: array(AnnotatedAccountKey),
+    accountKeys: array(
+      pick({
+        pubkey: PublicKeyFromString,
+        signer: boolean(),
+        writable: boolean(),
+        source: optional(
+          union([literal('transaction'), literal('lookupTable')]),
+        ),
+      }),
+    ),
     instructions: array(ParsedOrRawInstruction),
     recentBlockhash: string(),
     addressTableLookups: optional(nullable(array(AddressTableLookupStruct))),
@@ -2301,15 +2087,6 @@ const ParsedConfirmedTransactionMetaResult = pick({
 
 const TransactionVersionStruct = union([literal(0), literal('legacy')]);
 
-/** @internal */
-const RewardsResult = pick({
-  pubkey: string(),
-  daltons: number(),
-  postBalance: nullable(number()),
-  rewardType: nullable(string()),
-  commission: optional(nullable(number())),
-});
-
 /**
  * Expected JSON RPC response for the "getBlock" message
  */
@@ -2326,46 +2103,16 @@ const GetBlockRpcResult = jsonRpcResult(
           version: optional(TransactionVersionStruct),
         }),
       ),
-      rewards: optional(array(RewardsResult)),
-      blockTime: nullable(number()),
-      blockHeight: nullable(number()),
-    }),
-  ),
-);
-
-/**
- * Expected JSON RPC response for the "getBlock" message when `transactionDetails` is `none`
- */
-const GetNoneModeBlockRpcResult = jsonRpcResult(
-  nullable(
-    pick({
-      blockhash: string(),
-      previousBlockhash: string(),
-      parentSlot: number(),
-      rewards: optional(array(RewardsResult)),
-      blockTime: nullable(number()),
-      blockHeight: nullable(number()),
-    }),
-  ),
-);
-
-/**
- * Expected JSON RPC response for the "getBlock" message when `transactionDetails` is `accounts`
- */
-const GetAccountsModeBlockRpcResult = jsonRpcResult(
-  nullable(
-    pick({
-      blockhash: string(),
-      previousBlockhash: string(),
-      parentSlot: number(),
-      transactions: array(
-        pick({
-          transaction: ConfirmedTransactionAccountsModeResult,
-          meta: nullable(ConfirmedTransactionMetaResult),
-          version: optional(TransactionVersionStruct),
-        }),
+      rewards: optional(
+        array(
+          pick({
+            pubkey: string(),
+            daltons: number(),
+            postBalance: nullable(number()),
+            rewardType: nullable(string()),
+          }),
+        ),
       ),
-      rewards: optional(array(RewardsResult)),
       blockTime: nullable(number()),
       blockHeight: nullable(number()),
     }),
@@ -2388,46 +2135,16 @@ const GetParsedBlockRpcResult = jsonRpcResult(
           version: optional(TransactionVersionStruct),
         }),
       ),
-      rewards: optional(array(RewardsResult)),
-      blockTime: nullable(number()),
-      blockHeight: nullable(number()),
-    }),
-  ),
-);
-
-/**
- * Expected parsed JSON RPC response for the "getBlock" message  when `transactionDetails` is `accounts`
- */
-const GetParsedAccountsModeBlockRpcResult = jsonRpcResult(
-  nullable(
-    pick({
-      blockhash: string(),
-      previousBlockhash: string(),
-      parentSlot: number(),
-      transactions: array(
-        pick({
-          transaction: ConfirmedTransactionAccountsModeResult,
-          meta: nullable(ParsedConfirmedTransactionMetaResult),
-          version: optional(TransactionVersionStruct),
-        }),
+      rewards: optional(
+        array(
+          pick({
+            pubkey: string(),
+            daltons: number(),
+            postBalance: nullable(number()),
+            rewardType: nullable(string()),
+          }),
+        ),
       ),
-      rewards: optional(array(RewardsResult)),
-      blockTime: nullable(number()),
-      blockHeight: nullable(number()),
-    }),
-  ),
-);
-
-/**
- * Expected parsed JSON RPC response for the "getBlock" message  when `transactionDetails` is `none`
- */
-const GetParsedNoneModeBlockRpcResult = jsonRpcResult(
-  nullable(
-    pick({
-      blockhash: string(),
-      previousBlockhash: string(),
-      parentSlot: number(),
-      rewards: optional(array(RewardsResult)),
       blockTime: nullable(number()),
       blockHeight: nullable(number()),
     }),
@@ -2437,7 +2154,7 @@ const GetParsedNoneModeBlockRpcResult = jsonRpcResult(
 /**
  * Expected JSON RPC response for the "getConfirmedBlock" message
  *
- * @deprecated Deprecated since BBAChain v1.8.0. Please use {@link GetBlockRpcResult} instead.
+ * @deprecated Deprecated since Solana v1.8.0. Please use {@link GetBlockRpcResult} instead.
  */
 const GetConfirmedBlockRpcResult = jsonRpcResult(
   nullable(
@@ -2451,7 +2168,16 @@ const GetConfirmedBlockRpcResult = jsonRpcResult(
           meta: nullable(ConfirmedTransactionMetaResult),
         }),
       ),
-      rewards: optional(array(RewardsResult)),
+      rewards: optional(
+        array(
+          pick({
+            pubkey: string(),
+            daltons: number(),
+            postBalance: nullable(number()),
+            rewardType: nullable(string()),
+          }),
+        ),
+      ),
       blockTime: nullable(number()),
     }),
   ),
@@ -2505,7 +2231,7 @@ const GetParsedTransactionRpcResult = jsonRpcResult(
 /**
  * Expected JSON RPC response for the "getRecentBlockhash" message
  *
- * @deprecated Deprecated since BBAChain v1.8.0. Please use {@link GetLatestBlockhashRpcResult} instead.
+ * @deprecated Deprecated since Solana v1.8.0. Please use {@link GetLatestBlockhashRpcResult} instead.
  */
 const GetRecentBlockhashAndContextRpcResult = jsonRpcResultAndContext(
   pick({
@@ -2709,26 +2435,6 @@ export type GetTransactionCountConfig = {
 };
 
 /**
- * Configuration object for `getNonce`
- */
-export type GetNonceConfig = {
-  /** Optional commitment level */
-  commitment?: Commitment;
-  /** The minimum slot that the request can be evaluated at */
-  minContextSlot?: number;
-};
-
-/**
- * Configuration object for `getNonceAndContext`
- */
-export type GetNonceAndContextConfig = {
-  /** Optional commitment level */
-  commitment?: Commitment;
-  /** The minimum slot that the request can be evaluated at */
-  minContextSlot?: number;
-};
-
-/**
  * Information describing an account
  */
 export type AccountInfo<T> = {
@@ -2911,8 +2617,6 @@ export type ConfirmedSignatureInfo = {
   memo: string | null;
   /** The unix timestamp of when the transaction was processed */
   blockTime?: number | null;
-  /** Cluster confirmation status, if available. Possible values: `processed`, `confirmed`, `finalized` */
-  confirmationStatus?: TransactionConfirmationStatus;
 };
 
 /**
@@ -2943,12 +2647,6 @@ export type FetchMiddleware = (
  * Configuration for instantiating a Connection
  */
 export type ConnectionConfig = {
-  /**
-   * An `http.Agent` that will be used to manage socket connections (eg. to implement connection
-   * persistence). Set this to `false` to create a connection that uses no agent. This applies to
-   * Node environments only.
-   */
-  httpAgent?: NodeHttpAgent | NodeHttpsAgent | false;
   /** Optional commitment level */
   commitment?: Commitment;
   /** Optional endpoint URL to the fullnode JSON RPC PubSub WebSocket Endpoint */
@@ -3017,16 +2715,6 @@ export class Connection {
       | SubscriptionDisposeFn
       | undefined;
   } = {};
-  /** @internal */ private _subscriptionHashByClientSubscriptionId: {
-    [clientSubscriptionId: ClientSubscriptionId]:
-      | SubscriptionConfigHash
-      | undefined;
-  } = {};
-  /** @internal */ private _subscriptionStateChangeCallbacksByHash: {
-    [hash: SubscriptionConfigHash]:
-      | Set<SubscriptionStateChangeCallback>
-      | undefined;
-  } = {};
   /** @internal */ private _subscriptionCallbacksByServerSubscriptionId: {
     [serverSubscriptionId: ServerSubscriptionId]:
       | Set<SubscriptionConfig['callback']>
@@ -3066,7 +2754,6 @@ export class Connection {
     let fetch;
     let fetchMiddleware;
     let disableRetryOnRateLimit;
-    let httpAgent;
     if (commitmentOrConfig && typeof commitmentOrConfig === 'string') {
       this._commitment = commitmentOrConfig;
     } else if (commitmentOrConfig) {
@@ -3078,7 +2765,6 @@ export class Connection {
       fetch = commitmentOrConfig.fetch;
       fetchMiddleware = commitmentOrConfig.fetchMiddleware;
       disableRetryOnRateLimit = commitmentOrConfig.disableRetryOnRateLimit;
-      httpAgent = commitmentOrConfig.httpAgent;
     }
 
     this._rpcEndpoint = assertEndpointUrl(endpoint);
@@ -3090,7 +2776,6 @@ export class Connection {
       fetch,
       fetchMiddleware,
       disableRetryOnRateLimit,
-      httpAgent,
     );
     this._rpcRequest = createRpcRequest(this._rpcClient);
     this._rpcBatchRequest = createRpcBatchRequest(this._rpcClient);
@@ -3165,7 +2850,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getBalance', args);
     const res = create(unsafeRes, jsonRpcResultAndContext(number()));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         `failed to get balance for ${publicKey.toBase58()}`,
       );
@@ -3196,7 +2881,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getBlockTime', [slot]);
     const res = create(unsafeRes, jsonRpcResult(nullable(number())));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         `failed to get block time for slot ${slot}`,
       );
@@ -3212,7 +2897,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('minimumLedgerSlot', []);
     const res = create(unsafeRes, jsonRpcResult(number()));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         'failed to get minimum ledger slot',
       );
@@ -3227,7 +2912,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getFirstAvailableBlock', []);
     const res = create(unsafeRes, SlotRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         'failed to get first available block',
       );
@@ -3258,7 +2943,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getSupply', [configArg]);
     const res = create(unsafeRes, GetSupplyRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get supply');
+      throw new SolanaJSONRPCError(res.error, 'failed to get supply');
     }
     return res.result;
   }
@@ -3274,7 +2959,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getTokenSupply', args);
     const res = create(unsafeRes, jsonRpcResultAndContext(TokenAmountResult));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get token supply');
+      throw new SolanaJSONRPCError(res.error, 'failed to get token supply');
     }
     return res.result;
   }
@@ -3290,7 +2975,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getTokenAccountBalance', args);
     const res = create(unsafeRes, jsonRpcResultAndContext(TokenAmountResult));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         'failed to get token account balance',
       );
@@ -3325,7 +3010,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getTokenAccountsByOwner', args);
     const res = create(unsafeRes, GetTokenAccountsByOwner);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         `failed to get token accounts owned by account ${ownerAddress.toBase58()}`,
       );
@@ -3358,7 +3043,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getTokenAccountsByOwner', args);
     const res = create(unsafeRes, GetParsedTokenAccountsByOwner);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         `failed to get token accounts owned by account ${ownerAddress.toBase58()}`,
       );
@@ -3380,10 +3065,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getLargestAccounts', args);
     const res = create(unsafeRes, GetLargestAccountsRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
-        res.error,
-        'failed to get largest accounts',
-      );
+      throw new SolanaJSONRPCError(res.error, 'failed to get largest accounts');
     }
     return res.result;
   }
@@ -3400,7 +3082,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getTokenLargestAccounts', args);
     const res = create(unsafeRes, GetTokenLargestAccountsResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         'failed to get token largest accounts',
       );
@@ -3429,7 +3111,7 @@ export class Connection {
       jsonRpcResultAndContext(nullable(AccountInfoResult)),
     );
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         `failed to get info about account ${publicKey.toBase58()}`,
       );
@@ -3460,7 +3142,7 @@ export class Connection {
       jsonRpcResultAndContext(nullable(ParsedAccountInfoResult)),
     );
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         `failed to get info about account ${publicKey.toBase58()}`,
       );
@@ -3506,7 +3188,7 @@ export class Connection {
       jsonRpcResultAndContext(array(nullable(ParsedAccountInfoResult))),
     );
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         `failed to get info for accounts ${keys}`,
       );
@@ -3531,7 +3213,7 @@ export class Connection {
       jsonRpcResultAndContext(array(nullable(AccountInfoResult))),
     );
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         `failed to get info for accounts ${keys}`,
       );
@@ -3576,7 +3258,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getStakeActivation', args);
     const res = create(unsafeRes, jsonRpcResult(StakeActivationResult));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         `failed to get Stake Activation ${publicKey.toBase58()}`,
       );
@@ -3605,7 +3287,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getProgramAccounts', args);
     const res = create(unsafeRes, jsonRpcResult(array(KeyedAccountInfoResult)));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         `failed to get accounts owned by program ${programId.toBase58()}`,
       );
@@ -3641,7 +3323,7 @@ export class Connection {
       jsonRpcResult(array(KeyedParsedAccountInfoResult)),
     );
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         `failed to get accounts owned by program ${programId.toBase58()}`,
       );
@@ -3650,11 +3332,11 @@ export class Connection {
   }
 
   confirmTransaction(
-    strategy: TransactionConfirmationStrategy,
+    strategy: BlockheightBasedTransactionConfirmationStrategy,
     commitment?: Commitment,
   ): Promise<RpcResponseAndContext<SignatureResult>>;
 
-  /** @deprecated Instead, call `confirmTransaction` and pass in {@link TransactionConfirmationStrategy} */
+  /** @deprecated Instead, call `confirmTransaction` using a `TransactionConfirmationConfig` */
   // eslint-disable-next-line no-dupe-class-members
   confirmTransaction(
     strategy: TransactionSignature,
@@ -3663,7 +3345,9 @@ export class Connection {
 
   // eslint-disable-next-line no-dupe-class-members
   async confirmTransaction(
-    strategy: TransactionConfirmationStrategy | TransactionSignature,
+    strategy:
+      | BlockheightBasedTransactionConfirmationStrategy
+      | TransactionSignature,
     commitment?: Commitment,
   ): Promise<RpcResponseAndContext<SignatureResult>> {
     let rawSignature: string;
@@ -3671,11 +3355,8 @@ export class Connection {
     if (typeof strategy == 'string') {
       rawSignature = strategy;
     } else {
-      const config = strategy as TransactionConfirmationStrategy;
-
-      if (config.abortSignal?.aborted) {
-        return Promise.reject(config.abortSignal.reason);
-      }
+      const config =
+        strategy as BlockheightBasedTransactionConfirmationStrategy;
       rawSignature = config.signature;
     }
 
@@ -3689,404 +3370,104 @@ export class Connection {
 
     assert(decodedSignature.length === 64, 'signature has invalid length');
 
-    if (typeof strategy === 'string') {
-      return await this.confirmTransactionUsingLegacyTimeoutStrategy({
-        commitment: commitment || this.commitment,
-        signature: rawSignature,
-      });
-    } else if ('lastValidBlockHeight' in strategy) {
-      return await this.confirmTransactionUsingBlockHeightExceedanceStrategy({
-        commitment: commitment || this.commitment,
-        strategy,
-      });
-    } else {
-      return await this.confirmTransactionUsingDurableNonceStrategy({
-        commitment: commitment || this.commitment,
-        strategy,
-      });
-    }
-  }
-
-  private getCancellationPromise(signal?: AbortSignal): Promise<never> {
-    return new Promise<never>((_, reject) => {
-      if (signal == null) {
-        return;
-      }
-      if (signal.aborted) {
-        reject(signal.reason);
-      } else {
-        signal.addEventListener('abort', () => {
-          reject(signal.reason);
-        });
-      }
-    });
-  }
-
-  private getTransactionConfirmationPromise({
-    commitment,
-    signature,
-  }: {
-    commitment?: Commitment;
-    signature: string;
-  }): {
-    abortConfirmation(): void;
-    confirmationPromise: Promise<{
-      __type: TransactionStatus.PROCESSED;
-      response: RpcResponseAndContext<SignatureResult>;
-    }>;
-  } {
-    let signatureSubscriptionId: number | undefined;
-    let disposeSignatureSubscriptionStateChangeObserver:
-      | SubscriptionStateChangeDisposeFn
-      | undefined;
+    const subscriptionCommitment = commitment || this.commitment;
+    let timeoutId;
+    let subscriptionId;
     let done = false;
+
     const confirmationPromise = new Promise<{
       __type: TransactionStatus.PROCESSED;
       response: RpcResponseAndContext<SignatureResult>;
     }>((resolve, reject) => {
       try {
-        signatureSubscriptionId = this.onSignature(
-          signature,
+        subscriptionId = this.onSignature(
+          rawSignature,
           (result: SignatureResult, context: Context) => {
-            signatureSubscriptionId = undefined;
+            subscriptionId = undefined;
             const response = {
               context,
               value: result,
             };
+            done = true;
             resolve({__type: TransactionStatus.PROCESSED, response});
           },
-          commitment,
+          subscriptionCommitment,
         );
-        const subscriptionSetupPromise = new Promise<void>(
-          resolveSubscriptionSetup => {
-            if (signatureSubscriptionId == null) {
-              resolveSubscriptionSetup();
-            } else {
-              disposeSignatureSubscriptionStateChangeObserver =
-                this._onSubscriptionStateChange(
-                  signatureSubscriptionId,
-                  nextState => {
-                    if (nextState === 'subscribed') {
-                      resolveSubscriptionSetup();
-                    }
-                  },
-                );
-            }
-          },
-        );
-        (async () => {
-          await subscriptionSetupPromise;
-          if (done) return;
-          const response = await this.getSignatureStatus(signature);
-          if (done) return;
-          if (response == null) {
-            return;
-          }
-          const {context, value} = response;
-          if (value == null) {
-            return;
-          }
-          if (value?.err) {
-            reject(value.err);
-          } else {
-            switch (commitment) {
-              case 'confirmed':
-              case 'single':
-              case 'singleGossip': {
-                if (value.confirmationStatus === 'processed') {
-                  return;
-                }
-                break;
-              }
-              case 'finalized':
-              case 'max':
-              case 'root': {
-                if (
-                  value.confirmationStatus === 'processed' ||
-                  value.confirmationStatus === 'confirmed'
-                ) {
-                  return;
-                }
-                break;
-              }
-              // exhaust enums to ensure full coverage
-              case 'processed':
-              case 'recent':
-            }
-            done = true;
-            resolve({
-              __type: TransactionStatus.PROCESSED,
-              response: {
-                context,
-                value,
-              },
-            });
-          }
-        })();
       } catch (err) {
         reject(err);
       }
     });
-    const abortConfirmation = () => {
-      if (disposeSignatureSubscriptionStateChangeObserver) {
-        disposeSignatureSubscriptionStateChangeObserver();
-        disposeSignatureSubscriptionStateChangeObserver = undefined;
-      }
-      if (signatureSubscriptionId != null) {
-        this.removeSignatureListener(signatureSubscriptionId);
-        signatureSubscriptionId = undefined;
-      }
-    };
-    return {abortConfirmation, confirmationPromise};
-  }
 
-  private async confirmTransactionUsingBlockHeightExceedanceStrategy({
-    commitment,
-    strategy: {abortSignal, lastValidBlockHeight, signature},
-  }: {
-    commitment?: Commitment;
-    strategy: BlockheightBasedTransactionConfirmationStrategy;
-  }) {
-    let done: boolean = false;
-    const expiryPromise = new Promise<{
-      __type: TransactionStatus.BLOCKHEIGHT_EXCEEDED;
-    }>(resolve => {
-      const checkBlockHeight = async () => {
-        try {
-          const blockHeight = await this.getBlockHeight(commitment);
-          return blockHeight;
-        } catch (_e) {
-          return -1;
-        }
-      };
-      (async () => {
-        let currentBlockHeight = await checkBlockHeight();
-        if (done) return;
-        while (currentBlockHeight <= lastValidBlockHeight) {
-          await sleep(1000);
-          if (done) return;
-          currentBlockHeight = await checkBlockHeight();
-          if (done) return;
-        }
-        resolve({__type: TransactionStatus.BLOCKHEIGHT_EXCEEDED});
-      })();
-    });
-    const {abortConfirmation, confirmationPromise} =
-      this.getTransactionConfirmationPromise({commitment, signature});
-    const cancellationPromise = this.getCancellationPromise(abortSignal);
-    let result: RpcResponseAndContext<SignatureResult>;
-    try {
-      const outcome = await Promise.race([
-        cancellationPromise,
-        confirmationPromise,
-        expiryPromise,
-      ]);
-      if (outcome.__type === TransactionStatus.PROCESSED) {
-        result = outcome.response;
-      } else {
-        throw new TransactionExpiredBlockheightExceededError(signature);
-      }
-    } finally {
-      done = true;
-      abortConfirmation();
-    }
-    return result;
-  }
-
-  private async confirmTransactionUsingDurableNonceStrategy({
-    commitment,
-    strategy: {
-      abortSignal,
-      minContextSlot,
-      nonceAccountPubkey,
-      nonceValue,
-      signature,
-    },
-  }: {
-    commitment?: Commitment;
-    strategy: DurableNonceTransactionConfirmationStrategy;
-  }) {
-    let done: boolean = false;
-    const expiryPromise = new Promise<{
-      __type: TransactionStatus.NONCE_INVALID;
-      slotInWhichNonceDidAdvance: number | null;
-    }>(resolve => {
-      let currentNonceValue: string | undefined = nonceValue;
-      let lastCheckedSlot: number | null = null;
-      const getCurrentNonceValue = async () => {
-        try {
-          const {context, value: nonceAccount} = await this.getNonceAndContext(
-            nonceAccountPubkey,
-            {
-              commitment,
-              minContextSlot,
-            },
-          );
-          lastCheckedSlot = context.slot;
-          return nonceAccount?.nonce;
-        } catch (e) {
-          // If for whatever reason we can't reach/read the nonce
-          // account, just keep using the last-known value.
-          return currentNonceValue;
-        }
-      };
-      (async () => {
-        currentNonceValue = await getCurrentNonceValue();
-        if (done) return;
-        while (
-          true // eslint-disable-line no-constant-condition
-        ) {
-          if (nonceValue !== currentNonceValue) {
-            resolve({
-              __type: TransactionStatus.NONCE_INVALID,
-              slotInWhichNonceDidAdvance: lastCheckedSlot,
-            });
-            return;
-          }
-          await sleep(2000);
-          if (done) return;
-          currentNonceValue = await getCurrentNonceValue();
-          if (done) return;
-        }
-      })();
-    });
-    const {abortConfirmation, confirmationPromise} =
-      this.getTransactionConfirmationPromise({commitment, signature});
-    const cancellationPromise = this.getCancellationPromise(abortSignal);
-    let result: RpcResponseAndContext<SignatureResult>;
-    try {
-      const outcome = await Promise.race([
-        cancellationPromise,
-        confirmationPromise,
-        expiryPromise,
-      ]);
-      if (outcome.__type === TransactionStatus.PROCESSED) {
-        result = outcome.response;
-      } else {
-        // Double check that the transaction is indeed unconfirmed.
-        let signatureStatus:
-          | RpcResponseAndContext<SignatureStatus | null>
-          | null
-          | undefined;
-        while (
-          true // eslint-disable-line no-constant-condition
-        ) {
-          const status = await this.getSignatureStatus(signature);
-          if (status == null) {
+    const expiryPromise = new Promise<
+      | {__type: TransactionStatus.BLOCKHEIGHT_EXCEEDED}
+      | {__type: TransactionStatus.TIMED_OUT; timeoutMs: number}
+    >(resolve => {
+      if (typeof strategy === 'string') {
+        let timeoutMs = this._confirmTransactionInitialTimeout || 60 * 1000;
+        switch (subscriptionCommitment) {
+          case 'processed':
+          case 'recent':
+          case 'single':
+          case 'confirmed':
+          case 'singleGossip': {
+            timeoutMs = this._confirmTransactionInitialTimeout || 30 * 1000;
             break;
           }
-          if (
-            status.context.slot <
-            (outcome.slotInWhichNonceDidAdvance ?? minContextSlot)
-          ) {
-            await sleep(400);
-            continue;
-          }
-          signatureStatus = status;
-          break;
+          // exhaust enums to ensure full coverage
+          case 'finalized':
+          case 'max':
+          case 'root':
         }
-        if (signatureStatus?.value) {
-          const commitmentForStatus = commitment || 'finalized';
-          const {confirmationStatus} = signatureStatus.value;
-          switch (commitmentForStatus) {
-            case 'processed':
-            case 'recent':
-              if (
-                confirmationStatus !== 'processed' &&
-                confirmationStatus !== 'confirmed' &&
-                confirmationStatus !== 'finalized'
-              ) {
-                throw new TransactionExpiredNonceInvalidError(signature);
-              }
-              break;
-            case 'confirmed':
-            case 'single':
-            case 'singleGossip':
-              if (
-                confirmationStatus !== 'confirmed' &&
-                confirmationStatus !== 'finalized'
-              ) {
-                throw new TransactionExpiredNonceInvalidError(signature);
-              }
-              break;
-            case 'finalized':
-            case 'max':
-            case 'root':
-              if (confirmationStatus !== 'finalized') {
-                throw new TransactionExpiredNonceInvalidError(signature);
-              }
-              break;
-            default:
-              // Exhaustive switch.
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              ((_: never) => {})(commitmentForStatus);
-          }
-          result = {
-            context: signatureStatus.context,
-            value: {err: signatureStatus.value.err},
-          };
-        } else {
-          throw new TransactionExpiredNonceInvalidError(signature);
-        }
-      }
-    } finally {
-      done = true;
-      abortConfirmation();
-    }
-    return result;
-  }
 
-  private async confirmTransactionUsingLegacyTimeoutStrategy({
-    commitment,
-    signature,
-  }: {
-    commitment?: Commitment;
-    signature: string;
-  }) {
-    let timeoutId;
-    const expiryPromise = new Promise<{
-      __type: TransactionStatus.TIMED_OUT;
-      timeoutMs: number;
-    }>(resolve => {
-      let timeoutMs = this._confirmTransactionInitialTimeout || 60 * 1000;
-      switch (commitment) {
-        case 'processed':
-        case 'recent':
-        case 'single':
-        case 'confirmed':
-        case 'singleGossip': {
-          timeoutMs = this._confirmTransactionInitialTimeout || 30 * 1000;
-          break;
-        }
-        // exhaust enums to ensure full coverage
-        case 'finalized':
-        case 'max':
-        case 'root':
+        timeoutId = setTimeout(
+          () => resolve({__type: TransactionStatus.TIMED_OUT, timeoutMs}),
+          timeoutMs,
+        );
+      } else {
+        let config =
+          strategy as BlockheightBasedTransactionConfirmationStrategy;
+        const checkBlockHeight = async () => {
+          try {
+            const blockHeight = await this.getBlockHeight(commitment);
+            return blockHeight;
+          } catch (_e) {
+            return -1;
+          }
+        };
+        (async () => {
+          let currentBlockHeight = await checkBlockHeight();
+          if (done) return;
+          while (currentBlockHeight <= config.lastValidBlockHeight) {
+            await sleep(1000);
+            if (done) return;
+            currentBlockHeight = await checkBlockHeight();
+            if (done) return;
+          }
+          resolve({__type: TransactionStatus.BLOCKHEIGHT_EXCEEDED});
+        })();
       }
-      timeoutId = setTimeout(
-        () => resolve({__type: TransactionStatus.TIMED_OUT, timeoutMs}),
-        timeoutMs,
-      );
     });
-    const {abortConfirmation, confirmationPromise} =
-      this.getTransactionConfirmationPromise({
-        commitment,
-        signature,
-      });
+
     let result: RpcResponseAndContext<SignatureResult>;
     try {
       const outcome = await Promise.race([confirmationPromise, expiryPromise]);
-      if (outcome.__type === TransactionStatus.PROCESSED) {
-        result = outcome.response;
-      } else {
-        throw new TransactionExpiredTimeoutError(
-          signature,
-          outcome.timeoutMs / 1000,
-        );
+      switch (outcome.__type) {
+        case TransactionStatus.BLOCKHEIGHT_EXCEEDED:
+          throw new TransactionExpiredBlockheightExceededError(rawSignature);
+        case TransactionStatus.PROCESSED:
+          result = outcome.response;
+          break;
+        case TransactionStatus.TIMED_OUT:
+          throw new TransactionExpiredTimeoutError(
+            rawSignature,
+            outcome.timeoutMs / 1000,
+          );
       }
     } finally {
       clearTimeout(timeoutId);
-      abortConfirmation();
+      if (subscriptionId) {
+        this.removeSignatureListener(subscriptionId);
+      }
     }
     return result;
   }
@@ -4098,7 +3479,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getClusterNodes', []);
     const res = create(unsafeRes, jsonRpcResult(array(ContactInfoResult)));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get cluster nodes');
+      throw new SolanaJSONRPCError(res.error, 'failed to get cluster nodes');
     }
     return res.result;
   }
@@ -4111,7 +3492,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getVoteAccounts', args);
     const res = create(unsafeRes, GetVoteAccounts);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get vote accounts');
+      throw new SolanaJSONRPCError(res.error, 'failed to get vote accounts');
     }
     return res.result;
   }
@@ -4133,7 +3514,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getSlot', args);
     const res = create(unsafeRes, jsonRpcResult(number()));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get slot');
+      throw new SolanaJSONRPCError(res.error, 'failed to get slot');
     }
     return res.result;
   }
@@ -4155,7 +3536,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getSlotLeader', args);
     const res = create(unsafeRes, jsonRpcResult(string()));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get slot leader');
+      throw new SolanaJSONRPCError(res.error, 'failed to get slot leader');
     }
     return res.result;
   }
@@ -4174,7 +3555,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getSlotLeaders', args);
     const res = create(unsafeRes, jsonRpcResult(array(PublicKeyFromString)));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get slot leaders');
+      throw new SolanaJSONRPCError(res.error, 'failed to get slot leaders');
     }
     return res.result;
   }
@@ -4209,10 +3590,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getSignatureStatuses', params);
     const res = create(unsafeRes, GetSignatureStatusesRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
-        res.error,
-        'failed to get signature status',
-      );
+      throw new SolanaJSONRPCError(res.error, 'failed to get signature status');
     }
     return res.result;
   }
@@ -4234,7 +3612,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getTransactionCount', args);
     const res = create(unsafeRes, jsonRpcResult(number()));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         'failed to get transaction count',
       );
@@ -4265,7 +3643,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getInflationGovernor', args);
     const res = create(unsafeRes, GetInflationGovernorRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get inflation');
+      throw new SolanaJSONRPCError(res.error, 'failed to get inflation');
     }
     return res.result;
   }
@@ -4292,22 +3670,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getInflationReward', args);
     const res = create(unsafeRes, GetInflationRewardResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
-        res.error,
-        'failed to get inflation reward',
-      );
-    }
-    return res.result;
-  }
-
-  /**
-   * Fetch the specific inflation values for the current epoch
-   */
-  async getInflationRate(): Promise<InflationRate> {
-    const unsafeRes = await this._rpcRequest('getInflationRate', []);
-    const res = create(unsafeRes, GetInflationRateRpcResult);
-    if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get inflation rate');
+      throw new SolanaJSONRPCError(res.error, 'failed to get inflation reward');
     }
     return res.result;
   }
@@ -4329,7 +3692,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getEpochInfo', args);
     const res = create(unsafeRes, GetEpochInfoRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get epoch info');
+      throw new SolanaJSONRPCError(res.error, 'failed to get epoch info');
     }
     return res.result;
   }
@@ -4341,7 +3704,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getEpochSchedule', []);
     const res = create(unsafeRes, GetEpochScheduleRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get epoch schedule');
+      throw new SolanaJSONRPCError(res.error, 'failed to get epoch schedule');
     }
     const epochSchedule = res.result;
     return new EpochSchedule(
@@ -4361,10 +3724,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getLeaderSchedule', []);
     const res = create(unsafeRes, GetLeaderScheduleRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
-        res.error,
-        'failed to get leader schedule',
-      );
+      throw new SolanaJSONRPCError(res.error, 'failed to get leader schedule');
     }
     return res.result;
   }
@@ -4394,7 +3754,7 @@ export class Connection {
    * Fetch a recent blockhash from the cluster, return with context
    * @return {Promise<RpcResponseAndContext<{blockhash: Blockhash, feeCalculator: FeeCalculator}>>}
    *
-   * @deprecated Deprecated since BBAChain v1.8.0. Please use {@link getLatestBlockhash} instead.
+   * @deprecated Deprecated since Solana v1.8.0. Please use {@link getLatestBlockhash} instead.
    */
   async getRecentBlockhashAndContext(
     commitment?: Commitment,
@@ -4405,10 +3765,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getRecentBlockhash', args);
     const res = create(unsafeRes, GetRecentBlockhashAndContextRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
-        res.error,
-        'failed to get recent blockhash',
-      );
+      throw new SolanaJSONRPCError(res.error, 'failed to get recent blockhash');
     }
     return res.result;
   }
@@ -4426,7 +3783,7 @@ export class Connection {
     );
     const res = create(unsafeRes, GetRecentPerformanceSamplesRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         'failed to get recent performance samples',
       );
@@ -4438,7 +3795,7 @@ export class Connection {
   /**
    * Fetch the fee calculator for a recent blockhash from the cluster, return with context
    *
-   * @deprecated Deprecated since BBAChain v1.8.0. Please use {@link getFeeForMessage} instead.
+   * @deprecated Deprecated since Solana v1.8.0. Please use {@link getFeeForMessage} instead.
    */
   async getFeeCalculatorForBlockhash(
     blockhash: Blockhash,
@@ -4452,7 +3809,7 @@ export class Connection {
 
     const res = create(unsafeRes, GetFeeCalculatorRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get fee calculator');
+      throw new SolanaJSONRPCError(res.error, 'failed to get fee calculator');
     }
     const {context, value} = res.result;
     return {
@@ -4465,31 +3822,28 @@ export class Connection {
    * Fetch the fee for a message from the cluster, return with context
    */
   async getFeeForMessage(
-    message: VersionedMessage,
+    message: Message,
     commitment?: Commitment,
-  ): Promise<RpcResponseAndContext<number | null>> {
-    const wireMessage = toBuffer(message.serialize()).toString('base64');
+  ): Promise<RpcResponseAndContext<number>> {
+    const wireMessage = message.serialize().toString('base64');
     const args = this._buildArgs([wireMessage], commitment);
     const unsafeRes = await this._rpcRequest('getFeeForMessage', args);
 
     const res = create(unsafeRes, jsonRpcResultAndContext(nullable(number())));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
-        res.error,
-        'failed to get fee for message',
-      );
+      throw new SolanaJSONRPCError(res.error, 'failed to get slot');
     }
     if (res.result === null) {
       throw new Error('invalid blockhash');
     }
-    return res.result;
+    return res.result as unknown as RpcResponseAndContext<number>;
   }
 
   /**
    * Fetch a recent blockhash from the cluster
    * @return {Promise<{blockhash: Blockhash, feeCalculator: FeeCalculator}>}
    *
-   * @deprecated Deprecated since BBAChain v1.8.0. Please use {@link getLatestBlockhash} instead.
+   * @deprecated Deprecated since Solana v1.8.0. Please use {@link getLatestBlockhash} instead.
    */
   async getRecentBlockhash(
     commitment?: Commitment,
@@ -4535,10 +3889,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getLatestBlockhash', args);
     const res = create(unsafeRes, GetLatestBlockhashRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
-        res.error,
-        'failed to get latest blockhash',
-      );
+      throw new SolanaJSONRPCError(res.error, 'failed to get latest blockhash');
     }
     return res.result;
   }
@@ -4550,7 +3901,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getVersion', []);
     const res = create(unsafeRes, jsonRpcResult(VersionResult));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get version');
+      throw new SolanaJSONRPCError(res.error, 'failed to get version');
     }
     return res.result;
   }
@@ -4562,7 +3913,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getGenesisHash', []);
     const res = create(unsafeRes, jsonRpcResult(string()));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get genesis hash');
+      throw new SolanaJSONRPCError(res.error, 'failed to get genesis hash');
     }
     return res.result;
   }
@@ -4579,26 +3930,6 @@ export class Connection {
   ): Promise<BlockResponse | null>;
 
   /**
-   * @deprecated Instead, call `getBlock` using a `GetVersionedBlockConfig` by
-   * setting the `maxSupportedTransactionVersion` property.
-   */
-  // eslint-disable-next-line no-dupe-class-members
-  async getBlock(
-    slot: number,
-    rawConfig: GetBlockConfig & {transactionDetails: 'accounts'},
-  ): Promise<AccountsModeBlockResponse | null>;
-
-  /**
-   * @deprecated Instead, call `getBlock` using a `GetVersionedBlockConfig` by
-   * setting the `maxSupportedTransactionVersion` property.
-   */
-  // eslint-disable-next-line no-dupe-class-members
-  async getBlock(
-    slot: number,
-    rawConfig: GetBlockConfig & {transactionDetails: 'none'},
-  ): Promise<NoneModeBlockResponse | null>;
-
-  /**
    * Fetch a processed block from the cluster.
    */
   // eslint-disable-next-line no-dupe-class-members
@@ -4607,18 +3938,6 @@ export class Connection {
     rawConfig?: GetVersionedBlockConfig,
   ): Promise<VersionedBlockResponse | null>;
 
-  // eslint-disable-next-line no-dupe-class-members
-  async getBlock(
-    slot: number,
-    rawConfig: GetVersionedBlockConfig & {transactionDetails: 'accounts'},
-  ): Promise<VersionedAccountsModeBlockResponse | null>;
-
-  // eslint-disable-next-line no-dupe-class-members
-  async getBlock(
-    slot: number,
-    rawConfig: GetVersionedBlockConfig & {transactionDetails: 'none'},
-  ): Promise<VersionedNoneModeBlockResponse | null>;
-
   /**
    * Fetch a processed block from the cluster.
    */
@@ -4626,12 +3945,7 @@ export class Connection {
   async getBlock(
     slot: number,
     rawConfig?: GetVersionedBlockConfig,
-  ): Promise<
-    | VersionedBlockResponse
-    | VersionedAccountsModeBlockResponse
-    | VersionedNoneModeBlockResponse
-    | null
-  > {
+  ): Promise<VersionedBlockResponse | null> {
     const {commitment, config} = extractCommitmentFromConfig(rawConfig);
     const args = this._buildArgsAtLeastConfirmed(
       [slot],
@@ -4640,54 +3954,26 @@ export class Connection {
       config,
     );
     const unsafeRes = await this._rpcRequest('getBlock', args);
-    try {
-      switch (config?.transactionDetails) {
-        case 'accounts': {
-          const res = create(unsafeRes, GetAccountsModeBlockRpcResult);
-          if ('error' in res) {
-            throw res.error;
-          }
-          return res.result;
-        }
-        case 'none': {
-          const res = create(unsafeRes, GetNoneModeBlockRpcResult);
-          if ('error' in res) {
-            throw res.error;
-          }
-          return res.result;
-        }
-        default: {
-          const res = create(unsafeRes, GetBlockRpcResult);
-          if ('error' in res) {
-            throw res.error;
-          }
-          const {result} = res;
-          return result
-            ? {
-                ...result,
-                transactions: result.transactions.map(
-                  ({transaction, meta, version}) => ({
-                    meta,
-                    transaction: {
-                      ...transaction,
-                      message: versionedMessageFromResponse(
-                        version,
-                        transaction.message,
-                      ),
-                    },
-                    version,
-                  }),
-                ),
-              }
-            : null;
-        }
-      }
-    } catch (e) {
-      throw new BBAChainJSONRPCError(
-        e as JSONRPCError,
-        'failed to get confirmed block',
-      );
+    const res = create(unsafeRes, GetBlockRpcResult);
+
+    if ('error' in res) {
+      throw new SolanaJSONRPCError(res.error, 'failed to get confirmed block');
     }
+
+    const result = res.result;
+    if (!result) return result;
+
+    return {
+      ...result,
+      transactions: result.transactions.map(({transaction, meta, version}) => ({
+        meta,
+        transaction: {
+          ...transaction,
+          message: versionedMessageFromResponse(version, transaction.message),
+        },
+        version,
+      })),
+    };
   }
 
   /**
@@ -4696,29 +3982,7 @@ export class Connection {
   async getParsedBlock(
     slot: number,
     rawConfig?: GetVersionedBlockConfig,
-  ): Promise<ParsedAccountsModeBlockResponse>;
-
-  // eslint-disable-next-line no-dupe-class-members
-  async getParsedBlock(
-    slot: number,
-    rawConfig: GetVersionedBlockConfig & {transactionDetails: 'accounts'},
-  ): Promise<ParsedAccountsModeBlockResponse>;
-
-  // eslint-disable-next-line no-dupe-class-members
-  async getParsedBlock(
-    slot: number,
-    rawConfig: GetVersionedBlockConfig & {transactionDetails: 'none'},
-  ): Promise<ParsedNoneModeBlockResponse>;
-  // eslint-disable-next-line no-dupe-class-members
-  async getParsedBlock(
-    slot: number,
-    rawConfig?: GetVersionedBlockConfig,
-  ): Promise<
-    | ParsedBlockResponse
-    | ParsedAccountsModeBlockResponse
-    | ParsedNoneModeBlockResponse
-    | null
-  > {
+  ): Promise<ParsedBlockResponse | null> {
     const {commitment, config} = extractCommitmentFromConfig(rawConfig);
     const args = this._buildArgsAtLeastConfirmed(
       [slot],
@@ -4727,33 +3991,11 @@ export class Connection {
       config,
     );
     const unsafeRes = await this._rpcRequest('getBlock', args);
-    try {
-      switch (config?.transactionDetails) {
-        case 'accounts': {
-          const res = create(unsafeRes, GetParsedAccountsModeBlockRpcResult);
-          if ('error' in res) {
-            throw res.error;
-          }
-          return res.result;
-        }
-        case 'none': {
-          const res = create(unsafeRes, GetParsedNoneModeBlockRpcResult);
-          if ('error' in res) {
-            throw res.error;
-          }
-          return res.result;
-        }
-        default: {
-          const res = create(unsafeRes, GetParsedBlockRpcResult);
-          if ('error' in res) {
-            throw res.error;
-          }
-          return res.result;
-        }
-      }
-    } catch (e) {
-      throw new BBAChainJSONRPCError(e as JSONRPCError, 'failed to get block');
+    const res = create(unsafeRes, GetParsedBlockRpcResult);
+    if ('error' in res) {
+      throw new SolanaJSONRPCError(res.error, 'failed to get block');
     }
+    return res.result;
   }
 
   /*
@@ -4773,7 +4015,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getBlockHeight', args);
     const res = create(unsafeRes, jsonRpcResult(number()));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         'failed to get block height information',
       );
@@ -4803,7 +4045,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getBlockProduction', args);
     const res = create(unsafeRes, BlockProductionResponseStruct);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         'failed to get block production information',
       );
@@ -4851,7 +4093,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getTransaction', args);
     const res = create(unsafeRes, GetTransactionRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get transaction');
+      throw new SolanaJSONRPCError(res.error, 'failed to get transaction');
     }
 
     const result = res.result;
@@ -4887,7 +4129,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getTransaction', args);
     const res = create(unsafeRes, GetParsedTransactionRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get transaction');
+      throw new SolanaJSONRPCError(res.error, 'failed to get transaction');
     }
     return res.result;
   }
@@ -4918,7 +4160,7 @@ export class Connection {
     const res = unsafeRes.map((unsafeRes: any) => {
       const res = create(unsafeRes, GetParsedTransactionRpcResult);
       if ('error' in res) {
-        throw new BBAChainJSONRPCError(res.error, 'failed to get transactions');
+        throw new SolanaJSONRPCError(res.error, 'failed to get transactions');
       }
       return res.result;
     });
@@ -4979,7 +4221,7 @@ export class Connection {
     const res = unsafeRes.map((unsafeRes: any) => {
       const res = create(unsafeRes, GetTransactionRpcResult);
       if ('error' in res) {
-        throw new BBAChainJSONRPCError(res.error, 'failed to get transactions');
+        throw new SolanaJSONRPCError(res.error, 'failed to get transactions');
       }
       const result = res.result;
       if (!result) return result;
@@ -5014,10 +4256,7 @@ export class Connection {
     const res = create(unsafeRes, GetConfirmedBlockRpcResult);
 
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
-        res.error,
-        'failed to get confirmed block',
-      );
+      throw new SolanaJSONRPCError(res.error, 'failed to get confirmed block');
     }
 
     const result = res.result;
@@ -5068,7 +4307,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getBlocks', args);
     const res = create(unsafeRes, jsonRpcResult(array(number())));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get blocks');
+      throw new SolanaJSONRPCError(res.error, 'failed to get blocks');
     }
     return res.result;
   }
@@ -5092,7 +4331,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getBlock', args);
     const res = create(unsafeRes, GetBlockSignaturesRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get block');
+      throw new SolanaJSONRPCError(res.error, 'failed to get block');
     }
     const result = res.result;
     if (!result) {
@@ -5104,7 +4343,7 @@ export class Connection {
   /**
    * Fetch a list of Signatures from the cluster for a confirmed block, excluding rewards
    *
-   * @deprecated Deprecated since BBAChain v1.8.0. Please use {@link getBlockSignatures} instead.
+   * @deprecated Deprecated since Solana v1.8.0. Please use {@link getBlockSignatures} instead.
    */
   async getConfirmedBlockSignatures(
     slot: number,
@@ -5122,10 +4361,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getConfirmedBlock', args);
     const res = create(unsafeRes, GetBlockSignaturesRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
-        res.error,
-        'failed to get confirmed block',
-      );
+      throw new SolanaJSONRPCError(res.error, 'failed to get confirmed block');
     }
     const result = res.result;
     if (!result) {
@@ -5137,7 +4373,7 @@ export class Connection {
   /**
    * Fetch a transaction details for a confirmed transaction
    *
-   * @deprecated Deprecated since BBAChain v1.8.0. Please use {@link getTransaction} instead.
+   * @deprecated Deprecated since Solana v1.8.0. Please use {@link getTransaction} instead.
    */
   async getConfirmedTransaction(
     signature: TransactionSignature,
@@ -5147,7 +4383,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getConfirmedTransaction', args);
     const res = create(unsafeRes, GetTransactionRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(res.error, 'failed to get transaction');
+      throw new SolanaJSONRPCError(res.error, 'failed to get transaction');
     }
 
     const result = res.result;
@@ -5164,7 +4400,7 @@ export class Connection {
   /**
    * Fetch parsed transaction details for a confirmed transaction
    *
-   * @deprecated Deprecated since BBAChain v1.8.0. Please use {@link getParsedTransaction} instead.
+   * @deprecated Deprecated since Solana v1.8.0. Please use {@link getParsedTransaction} instead.
    */
   async getParsedConfirmedTransaction(
     signature: TransactionSignature,
@@ -5178,7 +4414,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getConfirmedTransaction', args);
     const res = create(unsafeRes, GetParsedTransactionRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         'failed to get confirmed transaction',
       );
@@ -5189,7 +4425,7 @@ export class Connection {
   /**
    * Fetch parsed transaction details for a batch of confirmed transactions
    *
-   * @deprecated Deprecated since BBAChain v1.8.0. Please use {@link getParsedTransactions} instead.
+   * @deprecated Deprecated since Solana v1.8.0. Please use {@link getParsedTransactions} instead.
    */
   async getParsedConfirmedTransactions(
     signatures: TransactionSignature[],
@@ -5211,7 +4447,7 @@ export class Connection {
     const res = unsafeRes.map((unsafeRes: any) => {
       const res = create(unsafeRes, GetParsedTransactionRpcResult);
       if ('error' in res) {
-        throw new BBAChainJSONRPCError(
+        throw new SolanaJSONRPCError(
           res.error,
           'failed to get confirmed transactions',
         );
@@ -5318,7 +4554,7 @@ export class Connection {
     );
     const res = create(unsafeRes, GetConfirmedSignaturesForAddress2RpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         'failed to get confirmed signatures for address',
       );
@@ -5348,7 +4584,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getSignaturesForAddress', args);
     const res = create(unsafeRes, GetSignaturesForAddressRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         'failed to get signatures for address',
       );
@@ -5384,11 +4620,11 @@ export class Connection {
    */
   async getNonceAndContext(
     nonceAccount: PublicKey,
-    commitmentOrConfig?: Commitment | GetNonceAndContextConfig,
+    commitment?: Commitment,
   ): Promise<RpcResponseAndContext<NonceAccount | null>> {
     const {context, value: accountInfo} = await this.getAccountInfoAndContext(
       nonceAccount,
-      commitmentOrConfig,
+      commitment,
     );
 
     let value = null;
@@ -5407,9 +4643,9 @@ export class Connection {
    */
   async getNonce(
     nonceAccount: PublicKey,
-    commitmentOrConfig?: Commitment | GetNonceConfig,
+    commitment?: Commitment,
   ): Promise<NonceAccount | null> {
-    return await this.getNonceAndContext(nonceAccount, commitmentOrConfig)
+    return await this.getNonceAndContext(nonceAccount, commitment)
       .then(x => x.value)
       .catch(e => {
         throw new Error(
@@ -5428,7 +4664,7 @@ export class Connection {
    * import { Connection, PublicKey, BBA_DALTON_UNIT } from "@bbachain/web3.js";
    *
    * (async () => {
-   *   const connection = new Connection("https://api-testnet.bbachain.com", "confirmed");
+   *   const connection = new Connection("https://api.testnet.solana.com", "confirmed");
    *   const myAddress = new PublicKey("2nr1bHFT86W9tGnyvmYW4vcHKsQB3sVQfnddasz4kExM");
    *   const signature = await connection.requestAirdrop(myAddress, BBA_DALTON_UNIT);
    *   await connection.confirmTransaction(signature);
@@ -5445,7 +4681,7 @@ export class Connection {
     ]);
     const res = create(unsafeRes, RequestAirdropRpcResult);
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         `airdrop to ${to.toBase58()} failed`,
       );
@@ -5521,7 +4757,7 @@ export class Connection {
     const unsafeRes = await this._rpcRequest('getStakeMinimumDelegation', args);
     const res = create(unsafeRes, jsonRpcResultAndContext(number()));
     if ('error' in res) {
-      throw new BBAChainJSONRPCError(
+      throw new SolanaJSONRPCError(
         res.error,
         `failed to get stake minimum delegation`,
       );
@@ -5830,12 +5066,7 @@ export class Connection {
     this._rpcWebSocketConnected = true;
     this._rpcWebSocketHeartbeat = setInterval(() => {
       // Ping server every 5s to prevent idle timeouts
-      (async () => {
-        try {
-          await this._rpcWebSocket.notify('ping');
-          // eslint-disable-next-line no-empty
-        } catch {}
-      })();
+      this._rpcWebSocket.notify('ping').catch(() => {});
     }, 5000);
     this._updateSubscriptions();
   }
@@ -5853,8 +5084,7 @@ export class Connection {
    */
   _wsOnClose(code: number) {
     this._rpcWebSocketConnected = false;
-    this._rpcWebSocketGeneration =
-      (this._rpcWebSocketGeneration + 1) % Number.MAX_SAFE_INTEGER;
+    this._rpcWebSocketGeneration++;
     if (this._rpcWebSocketIdleTimeout) {
       clearTimeout(this._rpcWebSocketIdleTimeout);
       this._rpcWebSocketIdleTimeout = null;
@@ -5875,58 +5105,11 @@ export class Connection {
     Object.entries(
       this._subscriptionsByHash as Record<SubscriptionConfigHash, Subscription>,
     ).forEach(([hash, subscription]) => {
-      this._setSubscription(hash, {
+      this._subscriptionsByHash[hash] = {
         ...subscription,
         state: 'pending',
-      });
+      };
     });
-  }
-
-  /**
-   * @internal
-   */
-  private _setSubscription(
-    hash: SubscriptionConfigHash,
-    nextSubscription: Subscription,
-  ) {
-    const prevState = this._subscriptionsByHash[hash]?.state;
-    this._subscriptionsByHash[hash] = nextSubscription;
-    if (prevState !== nextSubscription.state) {
-      const stateChangeCallbacks =
-        this._subscriptionStateChangeCallbacksByHash[hash];
-      if (stateChangeCallbacks) {
-        stateChangeCallbacks.forEach(cb => {
-          try {
-            cb(nextSubscription.state);
-            // eslint-disable-next-line no-empty
-          } catch {}
-        });
-      }
-    }
-  }
-
-  /**
-   * @internal
-   */
-  private _onSubscriptionStateChange(
-    clientSubscriptionId: ClientSubscriptionId,
-    callback: SubscriptionStateChangeCallback,
-  ): SubscriptionStateChangeDisposeFn {
-    const hash =
-      this._subscriptionHashByClientSubscriptionId[clientSubscriptionId];
-    if (hash == null) {
-      return () => {};
-    }
-    const stateChangeCallbacks = (this._subscriptionStateChangeCallbacksByHash[
-      hash
-    ] ||= new Set());
-    stateChangeCallbacks.add(callback);
-    return () => {
-      stateChangeCallbacks.delete(callback);
-      if (stateChangeCallbacks.size === 0) {
-        delete this._subscriptionStateChangeCallbacksByHash[hash];
-      }
-    };
   }
 
   /**
@@ -6009,17 +5192,17 @@ export class Connection {
             await (async () => {
               const {args, method} = subscription;
               try {
-                this._setSubscription(hash, {
+                this._subscriptionsByHash[hash] = {
                   ...subscription,
                   state: 'subscribing',
-                });
+                };
                 const serverSubscriptionId: ServerSubscriptionId =
                   (await this._rpcWebSocket.call(method, args)) as number;
-                this._setSubscription(hash, {
+                this._subscriptionsByHash[hash] = {
                   ...subscription,
                   serverSubscriptionId,
                   state: 'subscribed',
-                });
+                };
                 this._subscriptionCallbacksByServerSubscriptionId[
                   serverSubscriptionId
                 ] = subscription.callbacks;
@@ -6036,10 +5219,10 @@ export class Connection {
                   return;
                 }
                 // TODO: Maybe add an 'errored' state or a retry limit?
-                this._setSubscription(hash, {
+                this._subscriptionsByHash[hash] = {
                   ...subscription,
                   state: 'pending',
-                });
+                };
                 await this._updateSubscriptions();
               }
             })();
@@ -6067,14 +5250,10 @@ export class Connection {
                     serverSubscriptionId,
                   );
                 } else {
-                  this._setSubscription(hash, {
+                  this._subscriptionsByHash[hash] = {
                     ...subscription,
                     state: 'unsubscribing',
-                  });
-                  this._setSubscription(hash, {
-                    ...subscription,
-                    state: 'unsubscribing',
-                  });
+                  };
                   try {
                     await this._rpcWebSocket.call(unsubscribeMethod, [
                       serverSubscriptionId,
@@ -6087,18 +5266,18 @@ export class Connection {
                       return;
                     }
                     // TODO: Maybe add an 'errored' state or a retry limit?
-                    this._setSubscription(hash, {
+                    this._subscriptionsByHash[hash] = {
                       ...subscription,
                       state: 'subscribed',
-                    });
+                    };
                     await this._updateSubscriptions();
                     return;
                   }
                 }
-                this._setSubscription(hash, {
+                this._subscriptionsByHash[hash] = {
                   ...subscription,
                   state: 'unsubscribed',
-                });
+                };
                 await this._updateSubscriptions();
               })();
             }
@@ -6201,14 +5380,12 @@ export class Connection {
     } else {
       existingSubscription.callbacks.add(subscriptionConfig.callback);
     }
-    this._subscriptionHashByClientSubscriptionId[clientSubscriptionId] = hash;
     this._subscriptionDisposeFunctionsByClientSubscriptionId[
       clientSubscriptionId
     ] = async () => {
       delete this._subscriptionDisposeFunctionsByClientSubscriptionId[
         clientSubscriptionId
       ];
-      delete this._subscriptionHashByClientSubscriptionId[clientSubscriptionId];
       const subscription = this._subscriptionsByHash[hash];
       assert(
         subscription !== undefined,

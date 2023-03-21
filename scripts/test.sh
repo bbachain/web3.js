@@ -3,9 +3,9 @@
 set -ex
 
 # setup environment
-sh -c "$(curl -sSfL https://release.solana.com/edge/install)"
-PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
-solana --version
+# sh -c "$(curl -sSfL https://release.bbachain.com/edge/install)"
+# PATH="$HOME/.local/share/bbachain/install/active_release/bin:$PATH"
+# bbachain --version
 
 # build and test
 npm install
@@ -15,5 +15,5 @@ test -r lib/index.iife.js
 test -r lib/index.cjs.js
 test -r lib/index.esm.js
 npm run ok
-npm run codecov
+# npm run codecov
 # npm run test:live-with-test-validator

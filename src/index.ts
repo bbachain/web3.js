@@ -19,6 +19,6 @@ export * from './sysvar';
 export * from './utils';
 
 /**
- * There are 1-billion daltons in one BBA
+ * There are 1-billion daltons in one SOL
  */
 export const BBA_DALTON_UNIT = 1000000000;

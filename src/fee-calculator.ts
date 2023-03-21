@@ -10,7 +10,7 @@ export const FeeCalculatorLayout = BufferLayout.nu64('daltonsPerSignature');
 /**
  * Calculator for transaction fees.
  *
- * @deprecated Deprecated since BBAChain v1.8.0.
+ * @deprecated Deprecated since Solana v1.8.0.
  */
 export interface FeeCalculator {
   /** Cost in daltons to validate a signature. */

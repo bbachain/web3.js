@@ -1,11 +1,11 @@
 const endpoint = {
   http: {
     testnet: 'http://api-testnet.bbachain.com',
-    mainnet: 'http://api-mainnet.bbachain.com/',
+    mainnet: 'http://api-mainnet.bbachain.com',
   },
   https: {
     testnet: 'https://api-testnet.bbachain.com',
-    mainnet: 'https://api-mainnet.bbachain.com/',
+    mainnet: 'https://api-mainnet.bbachain.com',
   },
 };
 

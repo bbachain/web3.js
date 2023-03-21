@@ -8,15 +8,15 @@ export class Struct {
   }
 
   encode(): Buffer {
-    return Buffer.from(serialize(BBACHAIN_SCHEMA, this));
+    return Buffer.from(serialize(SOLANA_SCHEMA, this));
   }
 
   static decode(data: Buffer): any {
-    return deserialize(BBACHAIN_SCHEMA, this, data);
+    return deserialize(SOLANA_SCHEMA, this, data);
   }
 
   static decodeUnchecked(data: Buffer): any {
-    return deserializeUnchecked(BBACHAIN_SCHEMA, this, data);
+    return deserializeUnchecked(SOLANA_SCHEMA, this, data);
   }
 }
 
@@ -35,4 +35,4 @@ export class Enum extends Struct {
   }
 }
 
-export const BBACHAIN_SCHEMA: Map<Function, any> = new Map();
+export const SOLANA_SCHEMA: Map<Function, any> = new Map();

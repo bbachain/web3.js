@@ -54,7 +54,7 @@ Install the latest BBAChain release from https://docs.bbachain.com/cli/install-c
 
 ### Run test validator
 
-**Use `solana-test-validator` from the latest BBAChain release**
+**Use `bbachain-test-validator` from the latest BBAChain release**
 
 ### SBF program development
 
