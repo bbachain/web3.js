@@ -6,8 +6,8 @@
 [![semantic-release][semantic-release-image]][semantic-release-url]
 [![code-style-prettier][code-style-prettier-image]][code-style-prettier-url]
 
-[codecov-image]: https://codecov.io/gh/BTI-Labs/web3.js/branch/master/graph/badge.svg
-[codecov-url]: https://codecov.io/gh/BTI-Labs/web3.js
+[codecov-image]: https://codecov.io/gh/bbachain/web3.js/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/bbachain/web3.js
 [npm-image]: https://img.shields.io/npm/v/@bbachain/web3.js.svg?style=flat
 [npm-downloads-image]: https://img.shields.io/npm/dm/@bbachain/web3.js.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@bbachain/web3.js
@@ -22,7 +22,7 @@ This is the BBAChain Javascript API built on the BBAChain [JSON RPC API](https:/
 
 ## Documentation and examples
 
- - For more detail on individual functions, see the [latest API Documentation](https://bti-labs.github.io/web3.js/)
+ - For more detail on individual functions, see the [latest API Documentation](https://bbachain.github.io/web3.js/)
 
 ## Installation
 
@@ -103,7 +103,7 @@ This library requires a JavaScript runtime that supports [`BigInt`](https://deve
 
 ## Releases
 
-Releases are available on [Github](https://github.com/BTI-Labs/web3.js/releases)
+Releases are available on [Github](https://github.com/bbachain/web3.js/releases)
 and [npmjs.com](https://www.npmjs.com/package/@bbachain/web3.js)
 
 Each Github release features a tarball containing API documentation and a
@@ -112,8 +112,8 @@ minified version of the module suitable for direct use in a browser environment
 
 ## Contributing
 
-If you found a bug or would like to request a feature, please [file an issue](https://github.com/BTI-Labs/web3.js/issues/new).
-If, based on the discussion on an issue you would like to offer a code change, please make a [pull request](https://github.com/BTI-Labs/web3.js/compare). If neither of these describes what you would like to contribute, read the [getting help](#getting-help) section above.
+If you found a bug or would like to request a feature, please [file an issue](https://github.com/bbachain/web3.js/issues/new).
+If, based on the discussion on an issue you would like to offer a code change, please make a [pull request](https://github.com/bbachain/web3.js/compare). If neither of these describes what you would like to contribute, read the [getting help](#getting-help) section above.
 
 ## Disclaimer
 
